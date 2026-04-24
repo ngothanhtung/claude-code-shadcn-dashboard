@@ -1,57 +1,21 @@
 "use client"
 
-import { useState } from "react"
-import { StatCards } from "./components/stat-cards"
-import { DataTable } from "./components/data-table"
-
-import initialUsersData from "./data.json"
-
-interface User {
-  id: number
-  name: string
-  email: string
-  avatar: string
-  role: string
-  plan: string
-  billing: string
-  status: string
-  joinedDate: string
-  lastLogin: string
-}
-
-interface UserFormValues {
-  name: string
-  email: string
-  role: string
-  plan: string
-  billing: string
-  status: string
-}
+import { useEffect, useState } from "react"
+import { StatCards } from "@/modules/users/components/stat-cards"
+import { DataTable } from "@/modules/users/components/data-table"
+import { userMockData } from "@/modules/users/services/user-mock-data"
+import { createUser, getUsers } from "@/modules/users/services/user-services"
+import type { User, UserFormValues } from "@/modules/users/services/types/user-types"
 
 export default function UsersPage() {
-  const [users, setUsers] = useState<User[]>(initialUsersData)
+  const [users, setUsers] = useState<User[]>(userMockData)
 
-  const generateAvatar = (name: string) => {
-    const names = name.split(" ")
-    if (names.length >= 2) {
-      return `${names[0][0]}${names[1][0]}`.toUpperCase()
-    }
-    return name.substring(0, 2).toUpperCase()
-  }
+  useEffect(() => {
+    getUsers().then(setUsers)
+  }, [])
 
   const handleAddUser = (userData: UserFormValues) => {
-    const newUser: User = {
-      id: Math.max(...users.map(u => u.id)) + 1,
-      name: userData.name,
-      email: userData.email,
-      avatar: generateAvatar(userData.name),
-      role: userData.role,
-      plan: userData.plan,
-      billing: userData.billing,
-      status: userData.status,
-      joinedDate: new Date().toISOString().split('T')[0],
-      lastLogin: new Date().toISOString().split('T')[0],
-    }
+    const newUser = createUser(users, userData)
     setUsers(prev => [newUser, ...prev])
   }
 

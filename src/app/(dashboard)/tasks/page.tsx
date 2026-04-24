@@ -1,22 +1,16 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { z } from "zod"
 import { ArrowUp, BarChart3, CheckCircle2, Clock, ListTodo } from "lucide-react"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { columns } from "./components/columns"
-import { DataTable } from "./components/data-table"
-import { taskSchema, type Task } from "./data/schema"
-import tasksData from "./data/tasks.json"
-
-// Use static import for tasks data (works in both Vite and Next.js)
-async function getTasks() {
-  return z.array(taskSchema).parse(tasksData)
-}
+import { columns } from "@/modules/tasks/components/columns"
+import { DataTable } from "@/modules/tasks/components/data-table"
+import { getTasks, getTaskStats } from "@/modules/tasks/services/task-services"
+import type { Task } from "@/modules/tasks/services/types/task-types"
 
 export default function TaskPage() {
-  const [tasks, setTasks] = useState<z.infer<typeof taskSchema>[]>([])
+  const [tasks, setTasks] = useState<Task[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -38,13 +32,7 @@ export default function TaskPage() {
     setTasks(prev => [newTask, ...prev])
   }
 
-  // Calculate statistics
-  const stats = {
-    total: tasks.length,
-    completed: tasks.filter(t => t.status === "completed").length,
-    inProgress: tasks.filter(t => t.status === "in progress").length,
-    pending: tasks.filter(t => t.status === "pending").length,
-  }
+  const stats = getTaskStats(tasks)
 
   if (loading) {
     return (

@@ -1,7 +1,9 @@
-import { Mail } from "./components/mail"
-import { accounts, mails } from "./data"
+import { Mail } from "@/modules/mail/components/mail"
+import { getMailData } from "@/modules/mail/services/mail-services"
 
-export default function MailPage() {
+export default async function MailPage() {
+  const { accounts, mails } = await getMailData()
+
   return (
     <div className="@container/main flex flex-1 flex-col">
       <div className="h-[calc(100vh-4rem)] px-4 md:px-6">

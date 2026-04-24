@@ -2,13 +2,9 @@
 
 import { useEffect, useState } from "react"
 
-import { Chat } from "./components/chat"
-import { type Conversation, type Message, type User } from "./use-chat"
-
-// Import static data
-import conversationsData from "./data/conversations.json"
-import messagesData from "./data/messages.json"
-import usersData from "./data/users.json"
+import { Chat } from "@/modules/chat/components/chat"
+import { getChatData } from "@/modules/chat/services/chat-services"
+import { type Conversation, type Message, type User } from "@/modules/chat/services/types/chat-types"
 
 export default function ChatPage() {
   const [conversations, setConversations] = useState<Conversation[]>([])
@@ -19,10 +15,11 @@ export default function ChatPage() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        // In a real app, these would be API calls
-        setConversations(conversationsData as Conversation[])
-        setMessages(messagesData as Record<string, Message[]>)
-        setUsers(usersData as User[])
+        const chatData = await getChatData()
+
+        setConversations(chatData.conversations)
+        setMessages(chatData.messages)
+        setUsers(chatData.users)
       } catch (error) {
         console.error("Failed to load chat data:", error)
       } finally {

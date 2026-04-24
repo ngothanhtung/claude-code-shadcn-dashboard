@@ -1,12 +1,11 @@
 import { PricingPlans } from "@/components/pricing-plans"
-import { FeaturesGrid } from "./components/features-grid"
-import { FAQSection } from "./components/faq-section"
+import { FeaturesGrid } from "@/modules/pricing/components/features-grid"
+import { FAQSection } from "@/modules/pricing/components/faq-section"
+import { getPricingData } from "@/modules/pricing/services/pricing-services"
 
-// Import data
-import featuresData from "./data/features.json"
-import faqsData from "./data/faqs.json"
+export default async function PricingPage() {
+  const { features, faqs } = await getPricingData()
 
-export default function PricingPage() {
   return (
     <div className="px-4 lg:px-6">
       {/* Pricing Cards */}
@@ -15,10 +14,10 @@ export default function PricingPage() {
       </section>
 
       {/* Features Section */}
-      <FeaturesGrid features={featuresData} />
+      <FeaturesGrid features={features} />
 
       {/* FAQ Section */}
-      <FAQSection faqs={faqsData} />
+      <FAQSection faqs={faqs} />
     </div>
   )
 }

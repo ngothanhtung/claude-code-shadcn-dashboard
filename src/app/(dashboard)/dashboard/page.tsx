@@ -1,13 +1,12 @@
-import { ChartAreaInteractive } from "./components/chart-area-interactive"
-import { DataTable } from "./components/data-table"
-import { SectionCards } from "./components/section-cards"
+import { ChartAreaInteractive } from "@/modules/dashboard/components/chart-area-interactive"
+import { DataTable } from "@/modules/dashboard/components/data-table"
+import { SectionCards } from "@/modules/dashboard/components/section-cards"
+import { getDashboardData } from "@/modules/dashboard/services/dashboard-services"
 
-import data from "./data/data.json"
-import pastPerformanceData from "./data/past-performance-data.json"
-import keyPersonnelData from "./data/key-personnel-data.json"
-import focusDocumentsData from "./data/focus-documents-data.json"
+export default async function Page() {
+  const { data, pastPerformanceData, keyPersonnelData, focusDocumentsData } =
+    await getDashboardData()
 
-export default function Page() {
   return (
     <>
       {/* Page Title and Description */}

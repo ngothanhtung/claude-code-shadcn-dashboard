@@ -2,14 +2,13 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { PricingPlans } from "@/components/pricing-plans"
-import { CurrentPlanCard } from "./components/current-plan-card"
-import { BillingHistoryCard } from "./components/billing-history-card"
+import { CurrentPlanCard } from "@/modules/settings/components/billing/current-plan-card"
+import { BillingHistoryCard } from "@/modules/settings/components/billing/billing-history-card"
+import { getBillingSettingsData } from "@/modules/settings/services/settings-services"
 
-// Import data
-import currentPlanData from "./data/current-plan.json"
-import billingHistoryData from "./data/billing-history.json"
+export default async function BillingSettings() {
+  const { currentPlan, billingHistory } = await getBillingSettingsData()
 
-export default function BillingSettings() {
   const handlePlanSelect = (planId: string) => {
     console.log('Plan selected:', planId)
     // Handle plan selection logic here
@@ -25,8 +24,8 @@ export default function BillingSettings() {
         </div>
 
         <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
-          <CurrentPlanCard plan={currentPlanData} />
-          <BillingHistoryCard history={billingHistoryData} />
+          <CurrentPlanCard plan={currentPlan} />
+          <BillingHistoryCard history={billingHistory} />
         </div>
         
         <div className="grid gap-6">

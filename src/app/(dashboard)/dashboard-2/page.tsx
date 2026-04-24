@@ -1,10 +1,10 @@
-import { MetricsOverview } from "./components/metrics-overview"
-import { SalesChart } from "./components/sales-chart"
-import { RecentTransactions } from "./components/recent-transactions"
-import { TopProducts } from "./components/top-products"
-import { CustomerInsights } from "./components/customer-insights"
-import { QuickActions } from "./components/quick-actions"
-import { RevenueBreakdown } from "./components/revenue-breakdown"
+import { MetricsOverview } from "@/modules/dashboard-2/components/metrics-overview"
+import { SalesChart } from "@/modules/dashboard-2/components/sales-chart"
+import { RecentTransactions } from "@/modules/dashboard-2/components/recent-transactions"
+import { TopProducts } from "@/modules/dashboard-2/components/top-products"
+import { CustomerInsights } from "@/modules/dashboard-2/components/customer-insights"
+import { QuickActions } from "@/modules/dashboard-2/components/quick-actions"
+import { RevenueBreakdown } from "@/modules/dashboard-2/components/revenue-breakdown"
 
 export default function Dashboard2() {
   return (
