@@ -4,6 +4,7 @@ import * as React from "react"
 import {
   LayoutPanelLeft,
   LayoutDashboard,
+  Megaphone,
   Mail,
   CheckSquare,
   MessageCircle,
@@ -33,7 +34,7 @@ import {
 
 const data = {
   user: {
-    name: "ShadcnStore",
+    name: "Claude Code",
     email: "store@example.com",
     avatar: "",
   },
@@ -50,6 +51,11 @@ const data = {
           title: "Dashboard 2",
           url: "/dashboard-2",
           icon: LayoutPanelLeft,
+        },
+        {
+          title: "Dashboard 3",
+          url: "/dashboard-3",
+          icon: Megaphone,
         },
       ],
     },
@@ -132,7 +138,7 @@ const data = {
             {
               title: "Forgot Password 3",
               url: "/forgot-password-3",
-            }
+            },
           ],
         },
         {
@@ -220,7 +226,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   <Logo size={24} className="text-current" />
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium">ShadcnStore</span>
+                  <span className="truncate font-medium">Claude Code</span>
                   <span className="truncate text-xs">Admin Dashboard</span>
                 </div>
               </Link>

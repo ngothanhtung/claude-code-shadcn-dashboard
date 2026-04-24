@@ -24,13 +24,13 @@ export function ForgotPasswordForm3({
                   <div className="bg-primary text-primary-foreground flex size-8 items-center justify-center rounded-md">
                     <Logo size={24} />
                   </div>
-                  <span className="text-xl">ShadcnStore</span>
+                  <span className="text-xl">Claude Code</span>
                 </Link>
               </div>
               <div className="flex flex-col items-center text-center">
                 <h1 className="text-2xl font-bold">Forgot your password?</h1>
                 <p className="text-muted-foreground text-balance">
-                  Enter your email to reset your ShadcnStore account password
+                  Enter your email to reset your Claude Code account password
                 </p>
               </div>
               <div className="grid gap-3">
@@ -47,7 +47,10 @@ export function ForgotPasswordForm3({
               </Button>
               <div className="text-center text-sm">
                 Remember your password?{" "}
-                <a href="/auth/sign-in-3" className="underline underline-offset-4">
+                <a
+                  href="/auth/sign-in-3"
+                  className="underline underline-offset-4"
+                >
                   Back to sign in
                 </a>
               </div>

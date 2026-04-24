@@ -40,9 +40,14 @@ export function SiteHeader({ onThemeCustomizerOpen }: SiteHeaderProps) {
             <SearchTrigger onClick={() => setSearchOpen(true)} />
           </div>
           <div className="ml-auto flex items-center gap-2">
-            <Button variant="ghost" asChild size="sm" className="hidden sm:flex">
+            <Button
+              variant="ghost"
+              asChild
+              size="sm"
+              className="hidden sm:flex"
+            >
               <a
-                href="https://shadcnstore.com/blocks"
+                href="https://ngothanhtung.com/blocks"
                 rel="noopener noreferrer"
                 target="_blank"
                 className="dark:text-foreground"
@@ -50,7 +55,12 @@ export function SiteHeader({ onThemeCustomizerOpen }: SiteHeaderProps) {
                 Blocks
               </a>
             </Button>
-            <Button variant="ghost" asChild size="sm" className="hidden sm:flex">
+            <Button
+              variant="ghost"
+              asChild
+              size="sm"
+              className="hidden sm:flex"
+            >
               <a
                 href="/landing"
                 rel="noopener noreferrer"
@@ -60,9 +70,14 @@ export function SiteHeader({ onThemeCustomizerOpen }: SiteHeaderProps) {
                 Landing Page
               </a>
             </Button>
-            <Button variant="ghost" asChild size="sm" className="hidden sm:flex">
+            <Button
+              variant="ghost"
+              asChild
+              size="sm"
+              className="hidden sm:flex"
+            >
               <a
-                href="https://github.com/silicondeck/shadcn-dashboard-landing-template"
+                href="https://github.com/ngothanhtung/claude-code-shadcn-dashboard"
                 rel="noopener noreferrer"
                 target="_blank"
                 className="dark:text-foreground"

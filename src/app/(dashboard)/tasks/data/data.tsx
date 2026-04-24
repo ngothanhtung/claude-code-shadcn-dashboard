@@ -1,8 +1,12 @@
 import {
+  ChevronDown,
+  ChevronUp,
   CheckCircle2,
   Circle,
   Clock,
+  Minus,
   PlayCircle,
+  ChevronsUp,
 } from "lucide-react"
 
 export const categories = [
@@ -54,18 +58,22 @@ export const statuses = [
 export const priorities = [
   {
     label: "Minor",
-    value: "minor"
+    value: "minor",
+    icon: ChevronDown,
   },
   {
     label: "Normal",
-    value: "normal"
+    value: "normal",
+    icon: Minus,
   },
   {
     label: "Important",
-    value: "important"
+    value: "important",
+    icon: ChevronUp,
   },
   {
     label: "Critical",
-    value: "critical"
+    value: "critical",
+    icon: ChevronsUp,
   },
 ]
