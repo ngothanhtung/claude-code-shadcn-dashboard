@@ -1,9 +1,14 @@
 "use client"
 
 import { zodResolver } from "@hookform/resolvers/zod"
+import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { cn } from "@/lib/utils"
+import {
+  getFirebaseAuthErrorMessage,
+  signInWithEmailPassword,
+} from "@/lib/firebase/auth"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -33,13 +38,27 @@ export function LoginForm1({
   className,
   ...props
 }: React.ComponentProps<"div">) {
+  const router = useRouter()
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginFormSchema),
     defaultValues: {
-      email: "test@example.com",
-      password: "password",
+      email: "admin@claudecode.ai",
+      password: "123456789",
     },
   })
+
+  async function onSubmit(values: LoginFormValues) {
+    try {
+      form.clearErrors("root")
+      await signInWithEmailPassword(values.email, values.password)
+      router.push("/dashboard")
+      router.refresh()
+    } catch (error) {
+      form.setError("root", {
+        message: getFirebaseAuthErrorMessage(error),
+      })
+    }
+  }
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
@@ -52,7 +71,7 @@ export function LoginForm1({
         </CardHeader>
         <CardContent>
           <Form {...form}>
-            <form action="/">
+            <form onSubmit={form.handleSubmit(onSubmit)}>
               <div className="grid gap-6">
                 <div className="grid gap-4">
                   <FormField
@@ -64,7 +83,7 @@ export function LoginForm1({
                         <FormControl>
                           <Input
                             type="email"
-                            placeholder="test@example.com"
+                            placeholder="admin@claudecode.ai"
                             {...field}
                           />
                         </FormControl>
@@ -93,8 +112,17 @@ export function LoginForm1({
                       </FormItem>
                     )}
                   />
-                  <Button type="submit" className="w-full cursor-pointer">
-                    Login
+                  {form.formState.errors.root?.message ? (
+                    <p className="text-destructive text-sm">
+                      {form.formState.errors.root.message}
+                    </p>
+                  ) : null}
+                  <Button
+                    type="submit"
+                    className="w-full cursor-pointer"
+                    disabled={form.formState.isSubmitting}
+                  >
+                    {form.formState.isSubmitting ? "Logging in..." : "Login"}
                   </Button>
 
                   <Button variant="outline" className="w-full cursor-pointer" type="button">
@@ -109,7 +137,7 @@ export function LoginForm1({
                 </div>
                 <div className="text-center text-sm">
                   Don&apos;t have an account?{" "}
-                  <a href="/auth/sign-up" className="underline underline-offset-4">
+                  <a href="/sign-up" className="underline underline-offset-4">
                     Sign up
                   </a>
                 </div>

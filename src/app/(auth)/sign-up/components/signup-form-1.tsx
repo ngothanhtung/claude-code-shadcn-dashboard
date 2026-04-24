@@ -1,7 +1,9 @@
 "use client"
 
+import * as React from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
+import { useRouter } from "next/navigation"
 import { z } from "zod"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -22,6 +24,7 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Checkbox } from "@/components/ui/checkbox"
+import { signUpWithEmailPassword, getFirebaseAuthErrorMessage } from "@/lib/firebase/auth"
 
 const signupFormSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
@@ -41,6 +44,7 @@ export function SignupForm1({
   className,
   ...props
 }: React.ComponentProps<"div">) {
+  const router = useRouter()
   const form = useForm<SignupFormValues>({
     resolver: zodResolver(signupFormSchema),
     defaultValues: {
@@ -53,9 +57,23 @@ export function SignupForm1({
     },
   })
 
-  function onSubmit(data: SignupFormValues) {
-    console.log("Signup attempt:", data)
-    // Here you would typically handle the signup
+  const [isLoading, setIsLoading] = React.useState(false)
+  const [globalError, setGlobalError] = React.useState<string | null>(null)
+
+  async function onSubmit(data: SignupFormValues) {
+    setIsLoading(true)
+    setGlobalError(null)
+
+    const displayName = `${data.firstName} ${data.lastName}`.trim()
+
+    try {
+      await signUpWithEmailPassword(data.email, data.password, displayName)
+      router.push("/dashboard")
+    } catch (error) {
+      setGlobalError(getFirebaseAuthErrorMessage(error, "signup"))
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -71,6 +89,11 @@ export function SignupForm1({
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)}>
               <div className="grid gap-6">
+                {globalError && (
+                  <div className="rounded-md bg-destructive/10 border border-destructive/20 px-4 py-3 text-sm text-destructive">
+                    {globalError}
+                  </div>
+                )}
                 <div className="grid gap-4">
                   <div className="grid grid-cols-2 gap-3">
                     <FormField
@@ -161,11 +184,20 @@ export function SignupForm1({
                       </FormItem>
                     )}
                   />
-                  <Button type="submit" className="w-full cursor-pointer">
-                    Create Account
+                  <Button
+                    type="submit"
+                    className="w-full cursor-pointer"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? "Creating Account..." : "Create Account"}
                   </Button>
 
-                  <Button variant="outline" className="w-full cursor-pointer" type="button">
+                  <Button
+                    variant="outline"
+                    className="w-full cursor-pointer"
+                    type="button"
+                    disabled={isLoading}
+                  >
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                       <path
                         d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z"
@@ -177,7 +209,7 @@ export function SignupForm1({
                 </div>
                 <div className="text-center text-sm">
                   Already have an account?{" "}
-                  <a href="/auth/sign-in" className="underline underline-offset-4">
+                  <a href="/sign-in" className="underline underline-offset-4">
                     Sign in
                   </a>
                 </div>

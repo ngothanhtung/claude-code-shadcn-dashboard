@@ -7,6 +7,7 @@ import {
   Search,
   LayoutPanelLeft,
   LayoutDashboard,
+  Megaphone,
   Mail,
   CheckSquare,
   MessageCircle,
@@ -130,6 +131,7 @@ export function CommandSearch({ open, onOpenChange }: CommandSearchProps) {
     // Dashboards
     { title: "Dashboard 1", url: "/dashboard", group: "Dashboards", icon: LayoutDashboard },
     { title: "Dashboard 2", url: "/dashboard-2", group: "Dashboards", icon: LayoutPanelLeft },
+    { title: "Dashboard 3", url: "/dashboard-3", group: "Dashboards", icon: Megaphone },
 
     // Apps
     { title: "Mail", url: "/mail", group: "Apps", icon: Mail },
@@ -138,13 +140,9 @@ export function CommandSearch({ open, onOpenChange }: CommandSearchProps) {
     { title: "Calendar", url: "/calendar", group: "Apps", icon: Calendar },
 
     // Auth Pages
-    { title: "Sign In 1", url: "/auth/sign-in", group: "Auth Pages", icon: Shield },
-    { title: "Sign In 2", url: "/auth/sign-in-2", group: "Auth Pages", icon: Shield },
-    { title: "Sign Up 1", url: "/auth/sign-up", group: "Auth Pages", icon: Shield },
-    { title: "Sign Up 2", url: "/auth/sign-up-2", group: "Auth Pages", icon: Shield },
-    { title: "Forgot Password 1", url: "/auth/forgot-password", group: "Auth Pages", icon: Shield },
-    { title: "Forgot Password 2", url: "/auth/forgot-password-2", group: "Auth Pages", icon: Shield },
-
+    { title: "Sign In", url: "/sign-in", group: "Auth Pages", icon: Shield },
+    { title: "Sign Up", url: "/sign-up", group: "Auth Pages", icon: Shield },
+    { title: "Forgot Password", url: "/forgot-password", group: "Auth Pages", icon: Shield },
     // Errors
     { title: "Unauthorized", url: "/errors/unauthorized", group: "Errors", icon: AlertTriangle },
     { title: "Forbidden", url: "/errors/forbidden", group: "Errors", icon: AlertTriangle },
