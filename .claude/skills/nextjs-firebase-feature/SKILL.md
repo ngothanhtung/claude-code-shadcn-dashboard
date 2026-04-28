@@ -7,7 +7,9 @@ description: Tạo tính năng Feature trong Next.js với Firebase Firestore
 
 Dự án sử dụng:
 
-- **TypeScript** với path alias `@/` map tới thư mục root (cấu hình trong `tsconfig.json`)
+- # **TypeScript** với path alias `@/` map tới thư mục root (cấu hình trong `tsconfig.json`)
+- **TypeScript** với path alias `@/` map tới thư mục root (cấu hình trong `tsconfig.json` / `jsconfig.json`)
+  > > > > > > > ac32e41252d3491af27b328674a818b37f3a504f
 - **Next.js App Router** (app/ directory)
 - **Firebase Firestore** làm backend serverless
 - **Functional components + hooks** — không dùng React class components
