@@ -22,7 +22,11 @@ interface DataTableRowActionsProps<TData> {
 export function DataTableRowActions<TData>({
   row,
 }: DataTableRowActionsProps<TData>) {
-  const task = taskSchema.parse(row.original)
+  const parsed = taskSchema.safeParse(row.original)
+  if (!parsed.success) {
+    return null
+  }
+  const task = parsed.data
 
   return (
     <DropdownMenu>

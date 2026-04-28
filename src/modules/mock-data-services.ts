@@ -27,7 +27,9 @@ export const mockDataFeatures = [
   { id: "settings", label: "Settings", seed: seedSettingsMockData },
 ]
 
-export async function seedFeatureMockData(featureId: string): Promise<SeedFeatureResult[]> {
+export async function seedFeatureMockData(
+  featureId: string
+): Promise<SeedFeatureResult[]> {
   if (featureId === "all") {
     return Promise.all(mockDataFeatures.map((feature) => feature.seed()))
   }
