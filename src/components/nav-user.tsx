@@ -8,8 +8,10 @@ import {
   CircleUser,
 } from "lucide-react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 
-import { Logo } from "@/components/logo"
+import { signOutUser } from "@/lib/firebase/auth"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,6 +38,14 @@ export function NavUser({
   }
 }) {
   const { isMobile } = useSidebar()
+  const router = useRouter()
+  const fallback = getUserFallback(user.name, user.email)
+
+  async function handleLogout() {
+    await signOutUser()
+    router.push("/sign-in")
+    router.refresh()
+  }
 
   return (
     <SidebarMenu>
@@ -46,13 +56,16 @@ export function NavUser({
               size="lg"
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground cursor-pointer"
             >
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg">
-                < Logo size={28} />
-              </div>
+              <Avatar className="h-8 w-8 rounded-lg">
+                <AvatarImage src={user.avatar || undefined} alt={user.name} />
+                <AvatarFallback className="rounded-lg text-xs">
+                  {fallback}
+                </AvatarFallback>
+              </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">{user.name}</span>
                 <span className="text-muted-foreground truncate text-xs">
-                  {user.email}
+                  {user.email || "Not signed in"}
                 </span>
               </div>
               <EllipsisVertical className="ml-auto size-4" />
@@ -66,13 +79,16 @@ export function NavUser({
           >
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-                <div className="h-8 w-8 rounded-lg">
-                  < Logo size={28} />
-                </div>
+                <Avatar className="h-8 w-8 rounded-lg">
+                  <AvatarImage src={user.avatar || undefined} alt={user.name} />
+                  <AvatarFallback className="rounded-lg text-xs">
+                    {fallback}
+                  </AvatarFallback>
+                </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-medium">{user.name}</span>
                   <span className="text-muted-foreground truncate text-xs">
-                    {user.email}
+                    {user.email || "Not signed in"}
                   </span>
                 </div>
               </div>
@@ -99,15 +115,28 @@ export function NavUser({
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem asChild className="cursor-pointer">
-              <Link href="/sign-in">
-                <LogOut />
-                Log out
-              </Link>
+            <DropdownMenuItem
+              className="cursor-pointer"
+              onClick={handleLogout}
+            >
+              <LogOut />
+              Log out
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </SidebarMenuItem>
     </SidebarMenu>
   )
+}
+
+function getUserFallback(name: string, email: string) {
+  const source = name && name !== "Loading..." && name !== "Guest" ? name : email
+  const initials = source
+    .split(/[ @._-]+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("")
+
+  return initials || "U"
 }

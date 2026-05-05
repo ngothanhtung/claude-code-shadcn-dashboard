@@ -1,11 +1,11 @@
 "use client"
 
 import * as React from "react"
+import { onAuthStateChanged, type User } from "firebase/auth"
 import {
   LayoutPanelLeft,
   LayoutDashboard,
   Megaphone,
-  Database,
   Mail,
   CheckSquare,
   MessageCircle,
@@ -20,6 +20,7 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { Logo } from "@/components/logo"
+import { auth } from "@/lib/firebase/client"
 
 import { NavMain } from "@/components/nav-main"
 import { NavUser } from "@/components/nav-user"
@@ -34,11 +35,6 @@ import {
 } from "@/components/ui/sidebar"
 
 const data = {
-  user: {
-    name: "Claude Code",
-    email: "store@example.com",
-    avatar: "",
-  },
   navGroups: [
     {
       label: "Dashboards",
@@ -186,17 +182,35 @@ const data = {
           url: "/pricing",
           icon: CreditCard,
         },
-        {
-          title: "Mock Data",
-          url: "/mock-data",
-          icon: Database,
-        },
       ],
     },
   ],
 }
 
+function getUserName(user: User | null) {
+  if (!user) return "Guest"
+  if (user.displayName) return user.displayName
+  if (user.email) return user.email.split("@")[0]
+  return "User"
+}
+
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const [currentUser, setCurrentUser] = React.useState<User | null>(null)
+  const [isAuthReady, setIsAuthReady] = React.useState(false)
+
+  React.useEffect(() => {
+    return onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user)
+      setIsAuthReady(true)
+    })
+  }, [])
+
+  const user = {
+    name: isAuthReady ? getUserName(currentUser) : "Loading...",
+    email: currentUser?.email ?? "",
+    avatar: currentUser?.photoURL ?? "",
+  }
+
   return (
     <Sidebar {...props}>
       <SidebarHeader>
@@ -222,7 +236,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         ))}
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser user={user} />
       </SidebarFooter>
     </Sidebar>
   )

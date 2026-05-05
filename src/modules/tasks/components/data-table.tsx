@@ -32,13 +32,17 @@ import type { Task } from "@/modules/tasks/services/types/task-types"
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
-  onAddTask?: (task: Task) => void
+  onAddTask?: (task: Task) => void | Promise<void>
+  onSeedTasks?: () => void | Promise<void>
+  isSeedingTasks?: boolean
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
   onAddTask,
+  onSeedTasks,
+  isSeedingTasks,
 }: DataTableProps<TData, TValue>) {
   const [rowSelection, setRowSelection] = React.useState({})
   const [columnVisibility, setColumnVisibility] =
@@ -72,7 +76,12 @@ export function DataTable<TData, TValue>({
 
   return (
     <div className="space-y-4">
-      <DataTableToolbar table={table} onAddTask={onAddTask} />
+      <DataTableToolbar
+        table={table}
+        onAddTask={onAddTask}
+        onSeedTasks={onSeedTasks}
+        isSeedingTasks={isSeedingTasks}
+      />
       <div className="rounded-md border">
         <Table>
           <TableHeader>

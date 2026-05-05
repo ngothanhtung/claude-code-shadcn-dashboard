@@ -1,5 +1,6 @@
 "use client"
 
+import * as React from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
@@ -8,6 +9,7 @@ import { cn } from "@/lib/utils"
 import {
   getFirebaseAuthErrorMessage,
   signInWithEmailPassword,
+  signInWithGoogle,
 } from "@/lib/firebase/auth"
 import { Button } from "@/components/ui/button"
 import {
@@ -39,6 +41,7 @@ export function LoginForm1({
   ...props
 }: React.ComponentProps<"div">) {
   const router = useRouter()
+  const [isGoogleLoading, setIsGoogleLoading] = React.useState(false)
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginFormSchema),
     defaultValues: {
@@ -59,6 +62,24 @@ export function LoginForm1({
       })
     }
   }
+
+  async function handleGoogleLogin() {
+    try {
+      setIsGoogleLoading(true)
+      form.clearErrors("root")
+      await signInWithGoogle()
+      router.push("/dashboard")
+      router.refresh()
+    } catch (error) {
+      form.setError("root", {
+        message: getFirebaseAuthErrorMessage(error),
+      })
+    } finally {
+      setIsGoogleLoading(false)
+    }
+  }
+
+  const isLoading = form.formState.isSubmitting || isGoogleLoading
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
@@ -120,19 +141,25 @@ export function LoginForm1({
                   <Button
                     type="submit"
                     className="w-full cursor-pointer"
-                    disabled={form.formState.isSubmitting}
+                    disabled={isLoading}
                   >
                     {form.formState.isSubmitting ? "Logging in..." : "Login"}
                   </Button>
 
-                  <Button variant="outline" className="w-full cursor-pointer" type="button">
+                  <Button
+                    variant="outline"
+                    className="w-full cursor-pointer"
+                    type="button"
+                    disabled={isLoading}
+                    onClick={handleGoogleLogin}
+                  >
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                       <path
                         d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z"
                         fill="currentColor"
                       />
                     </svg>
-                    Login with Google
+                    {isGoogleLoading ? "Logging in..." : "Login with Google"}
                   </Button>
                 </div>
                 <div className="text-center text-sm">

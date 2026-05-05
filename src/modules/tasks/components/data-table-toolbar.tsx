@@ -1,7 +1,7 @@
 "use client"
 
 import type { Table } from "@tanstack/react-table"
-import { RefreshCcw } from "lucide-react"
+import { Database, RefreshCcw } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -15,17 +15,25 @@ import {
 import { DataTableViewOptions } from "./data-table-view-options"
 import { AddTaskModal } from "./add-task-modal"
 
-import { categories, priorities, statuses } from "@/modules/tasks/services/task-mock-data"
+import {
+  categories,
+  priorities,
+  statuses,
+} from "@/modules/tasks/services/task-mock-data"
 import type { Task } from "@/modules/tasks/services/types/task-types"
 
 interface DataTableToolbarProps<TData> {
   table: Table<TData>
-  onAddTask?: (task: Task) => void
+  onAddTask?: (task: Task) => void | Promise<void>
+  onSeedTasks?: () => void | Promise<void>
+  isSeedingTasks?: boolean
 }
 
 export function DataTableToolbar<TData>({
   table,
   onAddTask,
+  onSeedTasks,
+  isSeedingTasks,
 }: DataTableToolbarProps<TData>) {
   const isFiltered = table.getState().columnFilters.length > 0
 
@@ -56,9 +64,15 @@ export function DataTableToolbar<TData>({
     }
   }
 
-  const statusFilter = table.getColumn("status")?.getFilterValue() as string | undefined
-  const categoryFilter = table.getColumn("category")?.getFilterValue() as string | undefined
-  const priorityFilter = table.getColumn("priority")?.getFilterValue() as string | undefined
+  const statusFilter = table.getColumn("status")?.getFilterValue() as
+    | string
+    | undefined
+  const categoryFilter = table.getColumn("category")?.getFilterValue() as
+    | string
+    | undefined
+  const priorityFilter = table.getColumn("priority")?.getFilterValue() as
+    | string
+    | undefined
 
   return (
     <div className="space-y-4">
@@ -74,7 +88,9 @@ export function DataTableToolbar<TData>({
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all" className="cursor-pointer">All Status</SelectItem>
+              <SelectItem value="all" className="cursor-pointer">
+                All Status
+              </SelectItem>
               {statuses.map((status) => (
                 <SelectItem
                   key={status.value}
@@ -101,7 +117,9 @@ export function DataTableToolbar<TData>({
               <SelectValue placeholder="Category" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all" className="cursor-pointer">All Categories</SelectItem>
+              <SelectItem value="all" className="cursor-pointer">
+                All Categories
+              </SelectItem>
               {categories.map((category) => (
                 <SelectItem
                   key={category.value}
@@ -123,7 +141,9 @@ export function DataTableToolbar<TData>({
               <SelectValue placeholder="Priority" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all" className="cursor-pointer">All Priorities</SelectItem>
+              <SelectItem value="all" className="cursor-pointer">
+                All Priorities
+              </SelectItem>
               {priorities.map((priority) => (
                 <SelectItem
                   key={priority.value}
@@ -165,6 +185,18 @@ export function DataTableToolbar<TData>({
           </Button>
         </div>
         <div className="flex items-center space-x-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="cursor-pointer"
+            onClick={onSeedTasks}
+            disabled={!onSeedTasks || isSeedingTasks}
+          >
+            <Database className="h-4 w-4" />
+            <span className="hidden lg:block">
+              {isSeedingTasks ? "Seeding..." : "Seed Data"}
+            </span>
+          </Button>
           <DataTableViewOptions table={table} />
           <AddTaskModal onAddTask={onAddTask} />
         </div>
