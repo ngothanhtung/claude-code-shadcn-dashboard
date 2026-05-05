@@ -1,497 +1,339 @@
 ---
 name: nextjs-firebase-feature
-description: Tạo tính năng Feature trong Next.js với Firebase Firestore
+description: Build or update a Next.js App Router dashboard feature module backed by Firebase Firestore client SDK. Use for feature folders like src/modules/tasks that need typed services, inline mock seed data, manual client-side seeding, TanStack tables, CRUD dialogs/actions, and shadcn/ui components without Firebase Admin or server seeders.
 ---
 
-## Ngữ cảnh dự án
+# Next.js Firebase Feature
 
-Dự án sử dụng:
+Use this skill when creating or updating a dashboard module that follows the current `src/modules/tasks` structure.
 
-- **TypeScript** với path alias `@/` map tới `src/` (cấu hình trong `tsconfig.json`)
-- **Next.js App Router** — trang nằm trong `src/app/(dashboard)/<feature>/page.tsx`
-- **Firebase Firestore** làm backend serverless với mock-data fallback
-- **@tanstack/react-table** cho data table với sorting, filtering, pagination
-- **react-hook-form** + **zod** cho form validation
-- **shadcn/ui** component library + **lucide-react** icons + **Tailwind CSS**
-- **Functional components + hooks** — không dùng React class components
+## Project Pattern
 
-## Tham số đầu vào
+- Use Next.js App Router client pages under `src/app/(dashboard)/<feature>/page.tsx`.
+- Use module code under `src/modules/<feature>/`.
+- Use Firebase Web SDK from `@/lib/firebase/client`.
+- Do not use `firebase-admin`, server-only seeders, server actions, or `src/lib/firebase/admin.ts`.
+- Do not auto-seed on page load. Seed mock data only when the user triggers a seed function/button.
+- Keep mock seed data inline in `<feature>-mock-data.ts`; do not create JSON seed files.
+- Use `zod` schemas for feature item types.
+- Use `@tanstack/react-table` for tables.
+- Use shadcn/ui and lucide-react for UI.
 
-Khi sử dụng skill, cần xác định:
+## Module Shape
 
-1. **Tên feature** (ví dụ: `customer`, `product`, `order`) — dùng để tạo thư mục và files tương ứng
-2. **Danh sách fields** — các trường dữ liệu (name, email, phone, status, role, v.v.)
-3. **Fields bắt buộc** — validation trong form
-4. **Fields search/sort** — filter options trong toolbar và sort trong table columns
-
-## Cấu trúc mỗi feature
-
-```
-src/app/(dashboard)/<feature>/page.tsx     ← Trang chính (Client Component)
+```text
+src/app/(dashboard)/<feature>/page.tsx
 src/modules/<feature>/
-  services/
-    <feature>-services.ts                  ← Service layer + types
-    <feature>-mock-data.ts                ← Mock data cho development
-    types/
-      <feature>-types.ts                  ← TypeScript interfaces
   components/
-    data-table.tsx                        ← Tanstack Table + inline columns
-    data-table-toolbar.tsx                 ← Search, filter, add button
-    data-table-pagination.tsx              ← Pagination controls
-    data-table-view-options.tsx             ← Column visibility toggle (optional)
-    data-table-row-actions.tsx              ← Dropdown menu: view/edit/delete
-    <feature>-stat-cards.tsx               ← Stat cards (optional)
-    add-<feature>-modal.tsx                ← Dialog tạo mới
-    edit-<feature>-modal.tsx               ← Dialog chỉnh sửa (optional)
-    <feature>-form-dialog.tsx               ← Unified form dialog cho add/edit
-```
-
-## Firebase Integration
-
-### Helper Firestore
-
-Dự án dùng `getFirestoreCollection<T>()` — thử Firestore trước, fallback sang mock data nếu empty hoặc lỗi.
-
-```typescript
-// src/lib/firebase/firestore-query.ts
-import { collection, getDocs } from "firebase/firestore"
-
-export async function getFirestoreCollection<T>(
-  collectionName: string,
-  fallbackData: T[]
-): Promise<T[]> {
-  try {
-    const { db } = await import("@/lib/firebase/client")
-    const snapshot = await getDocs(collection(db, collectionName))
-    if (snapshot.empty) return fallbackData
-    return snapshot.docs.map((doc) => {
-      const data = doc.data() as T
-      const dataWithId = data as T & { id?: string | number }
-      return { ...data, id: dataWithId.id ?? doc.id }
-    })
-  } catch (error) {
-    console.warn(`Failed to load ${collectionName}, falling back to mock.`, error)
-    return fallbackData
-  }
-}
-```
-
-### Quy ước Firestore
-
-- **Collection naming**: số nhiều, snake_case (ví dụ: `tasks`, `users`, `customers`)
-- **Document ID**: Firestore tự tạo bằng `addDoc`, hoặc dùng `merge: true` khi seed
-- **Timestamps**: dùng `serverTimestamp()` khi seed (trong `mock-data-seeder.ts` dùng `FieldValue.serverTimestamp()`)
-- **Mock data fallback**: luôn truyền mock data làm fallback — không cần `serverTimestamp()` trong service
-- **No real-time**: KHÔNG dùng `onSnapshot`
-- **No direct Firestore CRUD**: service chỉ dùng `getFirestoreCollection` — tạo/cập nhật/xóa thực hiện trên local state (callback pattern)
-
-## Service Layer
-
-```typescript
-// src/modules/<feature>/services/<feature>-services.ts
-import { getFirestoreCollection } from "@/lib/firebase/firestore-query"
-import { <Feature>MockData } from "./<feature>-mock-data"
-import type { <Feature>Item } from "./types/<feature>-types"
-
-export async function get<Features>(): Promise<<Feature>Item[]> {
-  return getFirestoreCollection<<Feature>Item>("<features>", <Feature>MockData)
-}
-
-// Thêm helper functions nếu cần: create, update, delete trên local state
-// KHÔNG viết direct Firestore CRUD operations ở đây
-// Mà xử lý trên local state trong page/component
+    add-<feature>-modal.tsx
+    columns.tsx
+    data-table.tsx
+    data-table-column-header.tsx
+    data-table-pagination.tsx
+    data-table-row-actions.tsx
+    data-table-toolbar.tsx
+    data-table-view-options.tsx
+  services/
+    <feature>-mock-data.ts
+    <feature>-services.ts
+    <feature>-chart-services.ts        optional
+    <feature>-statistics-services.ts   optional
+    types/
+      <feature>-types.ts
 ```
 
 ## Types
 
-```typescript
-// src/modules/<feature>/services/types/<feature>-types.ts
+Define the item schema in `services/types/<feature>-types.ts`.
+
+```ts
 import { z } from "zod"
 
-export const <feature>Schema = z.object({
+export const taskSchema = z.object({
   id: z.string(),
-  // Thêm fields theo feature
-  name: z.string(),
-  email: z.string().optional(),
+  title: z.string(),
+  status: z.string(),
+  category: z.string(),
+  priority: z.string(),
 })
 
-export type <Feature>Item = z.infer<typeof <feature>Schema>
+export type Task = z.infer<typeof taskSchema>
 ```
 
-## Page (`page.tsx`)
-
-Dùng `useState` khởi tạo với mock data, fetch Firestore trong `useEffect`.
-
-```typescript
-// src/app/(dashboard)/<feature>/page.tsx
-"use client"
-
-import { useEffect, useState } from "react"
-import { <Feature>StatCards } from "@/modules/<feature>/components/<feature>-stat-cards"
-import { DataTable } from "@/modules/<feature>/components/data-table"
-import { columns } from "@/modules/<feature>/components/columns"
-import { <Feature>MockData } from "@/modules/<feature>/services/<feature>-mock-data"
-import { get<Features> } from "@/modules/<feature>/services/<feature>-services"
-import type { <Feature>Item } from "@/modules/<feature>/services/types/<feature>-types"
-
-export default function <Feature>Page() {
-  const [items, setItems] = useState<<Feature>Item[]>(<Feature>MockData)
-
-  useEffect(() => {
-    get<Features>().then(setItems)
-  }, [])
-
-  const handleAddItem = (newItem: <Feature>Item) => {
-    setItems(prev => [newItem, ...prev])
-  }
-
-  return (
-    <div className="flex flex-col gap-4">
-      <div className="@container/main px-4 lg:px-6">
-        <<Feature>StatCards />
-      </div>
-      <div className="@container/main px-4 lg:px-6">
-        <DataTable data={items} columns={columns} onAddItem={handleAddItem} />
-      </div>
-    </div>
-  )
-}
-```
-
-## Data Table (`data-table.tsx`)
-
-Dùng `@tanstack/react-table` — xem `src/modules/tasks/components/data-table.tsx` làm reference.
-
-Key imports:
-```typescript
-import {
-  type ColumnDef,
-  type ColumnFiltersState,
-  type SortingState,
-  type VisibilityState,
-  flexRender,
-  getCoreRowModel,
-  getFacetedRowModel,
-  getFacetedUniqueValues,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable,
-} from "@tanstack/react-table"
-```
-
-Table state: `sorting`, `columnVisibility`, `rowSelection`, `columnFilters`, `pagination`.
-
-## Columns (`columns.tsx`)
-
-Định nghĩa columns riêng, export ra `columns`. Dùng `accessorKey` hoặc custom `cell` render. Filter functions dùng `exactFilter` pattern:
-
-```typescript
-// src/modules/<feature>/components/columns.tsx
-"use client"
-
-import type { ColumnDef } from "@tanstack/react-table"
-
-export const columns: ColumnDef<<Feature>Item>[] = [
-  {
-    id: "select",
-    header: ({ table }) => <Checkbox ... />,
-    cell: ({ row }) => <Checkbox ... />,
-    enableSorting: false,
-  },
-  {
-    accessorKey: "name",
-    header: "Name",
-    cell: ({ row }) => <span>{row.getValue("name")}</span>,
-  },
-  // Thêm columns theo feature fields
-  // ...
-  {
-    id: "actions",
-    header: "Actions",
-    cell: ({ row }) => <DataTableRowActions row={row} />,
-  },
-]
-```
-
-## Toolbar (`data-table-toolbar.tsx`)
-
-Search input + filter Select dropdowns + Add button + column visibility.
-
-```typescript
-// src/modules/<feature>/components/data-table-toolbar.tsx
-"use client"
-
-import type { Table } from "@tanstack/react-table"
-import { Add<Feature>Modal } from "./add-<feature>-modal"
-
-interface DataTableToolbarProps<TData> {
-  table: Table<TData>
-  onAdd<Feature>?: (item: TData) => void
-}
-
-export function DataTableToolbar<TData>({ table, onAdd<Feature> }: DataTableToolbarProps<TData>) {
-  const isFiltered = table.getState().columnFilters.length > 0
-
-  return (
-    <div className="space-y-4">
-      {/* Filter section: grid of Select dropdowns */}
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-N">
-        {filters.map(f => (
-          <Select
-            value={(table.getColumn(f.key)?.getFilterValue() as string) ?? "all"}
-            onValueChange={(value) => table.getColumn(f.key)?.setFilterValue(value === "all" ? undefined : value)}
-          >
-            <SelectTrigger ...><SelectValue placeholder={f.label} /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All {f.label}</SelectItem>
-              {f.options.map(opt => (
-                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        ))}
-      </div>
-
-      {/* Search + Actions */}
-      <div className="flex items-center justify-between">
-        <div className="flex flex-1 items-center space-x-2">
-          <Input
-            placeholder="Search..."
-            value={(table.getColumn("title")?.getFilterValue() as string) ?? ""}
-            onChange={(event) => table.getColumn("title")?.setFilterValue(event.target.value)}
-          />
-          <Button variant="outline" onClick={() => table.resetColumnFilters()} disabled={!isFiltered}>
-            Reset
-          </Button>
-        </div>
-        <div className="flex items-center space-x-2">
-          <DataTableViewOptions table={table} />
-          <Add<Feature>Modal onAdd<Feature>={onAdd<Feature>} />
-        </div>
-      </div>
-    </div>
-  )
-}
-```
-
-## Row Actions (`data-table-row-actions.tsx`)
-
-Dùng `DropdownMenu` với view/edit/delete options.
-
-```typescript
-// src/modules/<feature>/components/data-table-row-actions.tsx
-"use client"
-
-import type { Row } from "@tanstack/react-table"
-import { MoreHorizontal, Eye, Pencil, Trash2 } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
-  DropdownMenuSeparator, DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-
-export function DataTableRowActions<TData>({ row }: { row: Row<TData> }) {
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="h-8 w-8 p-0">
-          <MoreHorizontal />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem><Eye className="mr-2 size-4" />View</DropdownMenuItem>
-        <DropdownMenuItem><Pencil className="mr-2 size-4" />Edit</DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem variant="destructive" onClick={() => handleDelete(row.original)}>
-          <Trash2 className="mr-2 size-4" />Delete
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  )
-}
-```
-
-## Add Modal (`add-<feature>-modal.tsx`)
-
-Controlled state, `zod` validation, `Select` cho dropdown fields.
-
-```typescript
-// src/modules/<feature>/components/add-<feature>-modal.tsx
-"use client"
-
-import { useState } from "react"
-import { z } from "zod"
-import { Plus } from "lucide-react"
-
-const <feature>FormSchema = z.object({
-  // Định nghĩa fields theo feature
-  title: z.string().min(1, "Title is required"),
-})
-
-export function Add<Feature>Modal({ onAdd<Feature> }: { onAdd<Feature>?: (item: <Feature>Item) => void }) {
-  const [open, setOpen] = useState(false)
-  const [formData, setFormData] = useState<z.infer<typeof <feature>FormSchema>>({ title: "" })
-  const [errors, setErrors] = useState<Record<string, string>>({})
-
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    try {
-      const validated = <feature>FormSchema.parse(formData)
-      onAdd<Feature>?.(validated)
-      setFormData({ title: "" })
-      setErrors({})
-      setOpen(false)
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        const newErrors: Record<string, string> = {}
-        error.issues.forEach((issue) => {
-          if (issue.path[0]) newErrors[issue.path[0] as string] = issue.message
-        })
-        setErrors(newErrors)
-      }
-    }
-  }
-
-  return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button><Plus className="size-4" />Add <Feature></Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Add <Feature></DialogTitle>
-          <DialogDescription>Fill in the details below.</DialogDescription>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Form fields: Input, Select, Textarea theo feature */}
-          <DialogFooter>
-            <Button type="submit"><Plus className="size-4" />Create</Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
-  )
-}
-```
-
-## Pagination (`data-table-pagination.tsx`)
-
-```typescript
-// src/modules/<feature>/components/data-table-pagination.tsx
-"use client"
-
-import type { Table } from "@tanstack/react-table"
-import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-
-export function DataTablePagination<TData>({ table }: { table: Table<TData> }) {
-  return (
-    <div className="flex items-center justify-between py-4">
-      <Select value={`${table.getState().pagination.pageSize}`} onValueChange={(v) => table.setPageSize(Number(v))}>
-        <SelectTrigger className="w-20">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent side="top">
-          {[10, 20, 30, 40, 50].map((size) => (
-            <SelectItem key={size} value={`${size}`}>{size}</SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      <div className="flex items-center space-x-6">
-        <span className="text-sm">
-          Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
-        </span>
-        <Button variant="outline" size="sm" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>
-          Previous
-        </Button>
-        <Button variant="outline" size="sm" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
-          Next
-        </Button>
-      </div>
-    </div>
-  )
-}
-```
-
-## View Options (`data-table-view-options.tsx`)
-
-Column visibility toggle.
-
-```typescript
-// src/modules/<feature>/components/data-table-view-options.tsx
-"use client"
-
-import type { Table } from "@tanstack/react-table"
-import { ChevronDown } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-
-export function DataTableViewOptions<TData>({ table }: { table: Table<TData> }) {
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm">Columns <ChevronDown className="ml-2 size-4" /></Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        {table.getAllColumns().filter(col => col.getCanHide()).map((column) => (
-          <DropdownMenuCheckboxItem
-            key={column.id}
-            checked={column.getIsVisible()}
-            onCheckedChange={(v) => column.toggleVisibility(!!v)}
-          >
-            {column.id}
-          </DropdownMenuCheckboxItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  )
-}
-```
+Keep Firestore document fields aligned with this schema unless the feature explicitly needs more fields and rules allow them.
 
 ## Mock Data
 
-```typescript
-// src/modules/<feature>/services/<feature>-mock-data.ts
-import type { <Feature>Item } from "./types/<feature>-types"
+Put option lists and seed rows in `services/<feature>-mock-data.ts`.
 
-export const <Feature>MockData: <Feature>Item[] = [
-  { id: "1", name: "Item 1", email: "item1@example.com" },
-  { id: "2", name: "Item 2", email: "item2@example.com" },
+```ts
+import { CheckCircle2, Circle } from "lucide-react"
+import { taskSchema } from "./types/task-types"
+
+export const statuses = [
+  { value: "todo", label: "Todo", icon: Circle },
+  { value: "completed", label: "Completed", icon: CheckCircle2 },
 ]
+
+const tasksData = [
+  {
+    id: "TASK-1001",
+    title: "Implement user authentication",
+    status: "completed",
+    category: "feature",
+    priority: "critical",
+  },
+]
+
+export const taskMockData = taskSchema.array().parse(tasksData)
 ```
 
-## Các bước thực hiện
+Do not import seed rows from `services/data/*.json`.
 
-1. **Tạo types** trong `services/types/<feature>-types.ts` — dùng `zod` schema
-2. **Tạo mock data** trong `services/<feature>-mock-data.ts` — array of items
-3. **Tạo service** trong `services/<feature>-services.ts` — dùng `getFirestoreCollection`
-4. **Tạo columns** trong `components/columns.tsx` — định nghĩa table columns
-5. **Tạo row actions** trong `components/data-table-row-actions.tsx` — dropdown menu
-6. **Tạo view options** trong `components/data-table-view-options.tsx` — column toggle
-7. **Tạo pagination** trong `components/data-table-pagination.tsx` — page controls
-8. **Tạo toolbar** trong `components/data-table-toolbar.tsx` — search + filters + add button
-9. **Tạo data table** trong `components/data-table.tsx` — Tanstack Table wrapper
-10. **Tạo add modal** trong `components/add-<feature>-modal.tsx` — create dialog
-11. **Tạo stat cards** trong `components/<feature>-stat-cards.tsx` — dashboard stats (optional)
-12. **Tạo page** trong `src/app/(dashboard)/<feature>/page.tsx` — ghép mọi thứ lại
-13. **Kiểm tra TypeScript**: `npx tsc --noEmit`
-14. **Chạy dev server**: `npm run dev` và xác nhận trang hoạt động
+## Firestore Services
 
-## Reference thực tế
+Use direct client SDK CRUD in `services/<feature>-services.ts`.
 
-- Feature `tasks`: `src/modules/tasks/` — đầy đủ nhất, có stats, Tanstack Table, toolbar, pagination, row actions, add modal
-- Feature `users`: `src/modules/users/` — dùng `react-hook-form` + `zod` trong form dialog
-- Firebase helper: `src/lib/firebase/firestore-query.ts`
-- Mock data seeder: `src/lib/firebase/mock-data-seeder.ts`
+```ts
+import {
+  collection,
+  deleteDoc,
+  doc,
+  getDocs,
+  setDoc,
+  updateDoc,
+  writeBatch,
+} from "firebase/firestore"
 
-## Loại trừ
+import { db } from "@/lib/firebase/client"
+import { taskMockData } from "./task-mock-data"
+import type { Task } from "./types/task-types"
 
-- Không tạo README hay tài liệu trừ khi được yêu cầu
-- Không dùng React class component
-- Không hardcode Firebase config — luôn import từ `@/lib/firebase/client`
-- Không dùng `onSnapshot` (real-time)
-- Page route phải là `src/app/(dashboard)/<feature>/page.tsx`
-- File service phải là `src/modules/<feature>/services/<feature>-services.ts` (số nhiều)
+const TASKS_COLLECTION = "tasks"
+
+export async function getTasks(): Promise<Task[]> {
+  const snapshot = await getDocs(collection(db, TASKS_COLLECTION))
+
+  return snapshot.docs.map((document) => {
+    const data = document.data() as Task
+    return { ...data, id: data.id ?? document.id }
+  })
+}
+
+export async function seedTasksWithClient(): Promise<Task[]> {
+  const batch = writeBatch(db)
+
+  taskMockData.forEach((task) => {
+    batch.set(doc(db, TASKS_COLLECTION, task.id), task, { merge: true })
+  })
+
+  await batch.commit()
+  return getTasks()
+}
+
+export async function createTask(task: Task): Promise<Task> {
+  await setDoc(doc(db, TASKS_COLLECTION, task.id), task)
+  return task
+}
+
+export async function updateTask(task: Task): Promise<Task> {
+  await updateDoc(doc(db, TASKS_COLLECTION, task.id), task)
+  return task
+}
+
+export async function deleteTask(taskId: string): Promise<void> {
+  await deleteDoc(doc(db, TASKS_COLLECTION, taskId))
+}
+```
+
+Rules:
+
+- `get<Features>()` reads Firestore only. It must not fall back to mock data and must not auto-seed.
+- `seed<Features>WithClient()` writes inline mock data with `writeBatch` and returns a fresh Firestore read.
+- `create`, `update`, and `delete` write to Firestore before updating UI state.
+- Avoid `serverTimestamp()` unless the schema and Firestore rules explicitly allow timestamp fields.
+- Do not use `onSnapshot` unless the user explicitly asks for realtime behavior.
+
+## Page Composition
+
+Use the page as the orchestration layer:
+
+- load items with `get<Features>()` in `useEffect`;
+- pass CRUD callbacks into columns/table;
+- refresh from Firestore after create when correctness matters;
+- update local state after update/delete for responsive UI;
+- expose a manual seed callback for the toolbar button.
+
+```ts
+"use client"
+
+import { useCallback, useEffect, useMemo, useState } from "react"
+import { DataTable } from "@/modules/tasks/components/data-table"
+import { getTaskColumns } from "@/modules/tasks/components/columns"
+import {
+  createTask,
+  deleteTask,
+  getTasks,
+  seedTasksWithClient,
+  updateTask,
+} from "@/modules/tasks/services/task-services"
+import type { Task } from "@/modules/tasks/services/types/task-types"
+
+export default function TaskPage() {
+  const [tasks, setTasks] = useState<Task[]>([])
+  const [loading, setLoading] = useState(true)
+  const [isSeedingTasks, setIsSeedingTasks] = useState(false)
+
+  const refreshTasks = useCallback(async () => {
+    setTasks(await getTasks())
+  }, [])
+
+  useEffect(() => {
+    refreshTasks().finally(() => setLoading(false))
+  }, [refreshTasks])
+
+  const handleAddTask = useCallback(
+    async (task: Task) => {
+      await createTask(task)
+      await refreshTasks()
+    },
+    [refreshTasks]
+  )
+
+  const handleUpdateTask = useCallback(async (task: Task) => {
+    await updateTask(task)
+    setTasks((prev) => prev.map((item) => (item.id === task.id ? task : item)))
+  }, [])
+
+  const handleDeleteTask = useCallback(async (taskId: string) => {
+    await deleteTask(taskId)
+    setTasks((prev) => prev.filter((task) => task.id !== taskId))
+  }, [])
+
+  const handleSeedTasks = useCallback(async () => {
+    setIsSeedingTasks(true)
+    try {
+      setTasks(await seedTasksWithClient())
+    } finally {
+      setIsSeedingTasks(false)
+    }
+  }, [])
+
+  const columns = useMemo(
+    () =>
+      getTaskColumns({
+        onUpdateTask: handleUpdateTask,
+        onDeleteTask: handleDeleteTask,
+      }),
+    [handleDeleteTask, handleUpdateTask]
+  )
+
+  if (loading) return <div>Loading...</div>
+
+  return (
+    <DataTable
+      data={tasks}
+      columns={columns}
+      onAddTask={handleAddTask}
+      onSeedTasks={handleSeedTasks}
+      isSeedingTasks={isSeedingTasks}
+    />
+  )
+}
+```
+
+## Columns and Row Actions
+
+Prefer a column factory when row actions need callbacks.
+
+```ts
+export function getTaskColumns({
+  onUpdateTask,
+  onDeleteTask,
+  onDuplicateTask,
+}: TaskColumnActions = {}): ColumnDef<Task>[] {
+  return [
+    // field columns...
+    {
+      id: "actions",
+      cell: ({ row }) => (
+        <DataTableRowActions
+          row={row}
+          onUpdateTask={onUpdateTask}
+          onDeleteTask={onDeleteTask}
+          onDuplicateTask={onDuplicateTask}
+        />
+      ),
+    },
+  ]
+}
+
+export const columns = getTaskColumns()
+```
+
+Row actions should parse `row.original` with the feature schema before using it. Edit dialogs should call `onUpdate...`; delete actions should call `onDelete...`; duplicate actions should generate a new ID and call create through the page callback.
+
+## Add Modal
+
+Add modal responsibilities:
+
+- maintain controlled form state;
+- validate with `zod`;
+- generate a stable unique string ID, for example `TASK-${Date.now()}`;
+- await `onAdd...`;
+- show root errors returned by Firestore;
+- reset state and close only after success;
+- set trigger buttons to `type="button"`.
+
+The modal should not import Firestore services directly. Keep writes in the page callback so state refresh stays centralized.
+
+## Toolbar
+
+Toolbar should include:
+
+- search input bound to a table column filter;
+- select filters for enum fields;
+- reset filters button;
+- column visibility button;
+- add modal trigger;
+- optional seed button wired to `onSeed...`.
+
+```tsx
+<Button
+  variant="outline"
+  size="sm"
+  onClick={onSeedTasks}
+  disabled={!onSeedTasks || isSeedingTasks}
+>
+  <Database className="h-4 w-4" />
+  <span className="hidden lg:block">
+    {isSeedingTasks ? "Seeding..." : "Seed Data"}
+  </span>
+</Button>
+```
+
+## Validation
+
+After changes, run:
+
+```bash
+npx tsc --noEmit
+npm run build
+```
+
+If a Firestore write fails in the UI:
+
+- inspect the modal or row action root error;
+- verify Firestore Security Rules allow the authenticated user to create/update/delete the collection;
+- verify document fields match the zod schema and rules;
+- avoid adding timestamp or metadata fields unless rules allow them.
+
+## Do Not
+
+- Do not create or use `firebase-admin`.
+- Do not create `mock-data-seeder.ts`.
+- Do not create a global `/mock-data` route for seeding modules.
+- Do not auto-seed in `get<Features>()`.
+- Do not place seed rows in JSON files.
+- Do not make CRUD local-only if the feature is Firestore-backed.
+- Do not hardcode Firebase config; always use `@/lib/firebase/client`.
