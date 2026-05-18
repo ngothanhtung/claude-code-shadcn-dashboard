@@ -36,7 +36,7 @@ const loginFormSchema = z.object({
 
 type LoginFormValues = z.infer<typeof loginFormSchema>
 
-export function LoginForm1({
+export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {

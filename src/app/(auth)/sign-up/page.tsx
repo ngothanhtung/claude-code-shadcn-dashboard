@@ -1,4 +1,4 @@
-import { SignupForm1 } from "./components/signup-form-1"
+import { SignupForm } from "./components/signup-form"
 import { Logo } from "@/components/logo"
 import Link from "next/link"
 
@@ -15,7 +15,7 @@ export default function SignUpPage() {
           </div>
           Claude Code
         </Link>
-        <SignupForm1 />
+        <SignupForm />
       </div>
     </div>
   )

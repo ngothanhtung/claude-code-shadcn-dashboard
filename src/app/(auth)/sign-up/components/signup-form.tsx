@@ -24,23 +24,30 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Checkbox } from "@/components/ui/checkbox"
-import { signUpWithEmailPassword, getFirebaseAuthErrorMessage } from "@/lib/firebase/auth"
+import {
+  signUpWithEmailPassword,
+  getFirebaseAuthErrorMessage,
+} from "@/lib/firebase/auth"
 
-const signupFormSchema = z.object({
-  firstName: z.string().min(1, "First name is required"),
-  lastName: z.string().min(1, "Last name is required"),
-  email: z.string().email("Invalid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-  confirmPassword: z.string().min(6, "Please confirm your password"),
-  terms: z.boolean().refine(val => val === true, "You must agree to the terms"),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"],
-})
+const signupFormSchema = z
+  .object({
+    firstName: z.string().min(1, "First name is required"),
+    lastName: z.string().min(1, "Last name is required"),
+    email: z.string().email("Invalid email address"),
+    password: z.string().min(6, "Password must be at least 6 characters"),
+    confirmPassword: z.string().min(6, "Please confirm your password"),
+    terms: z
+      .boolean()
+      .refine((val) => val === true, "You must agree to the terms"),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"],
+  })
 
 type SignupFormValues = z.infer<typeof signupFormSchema>
 
-export function SignupForm1({
+export function SignupForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {

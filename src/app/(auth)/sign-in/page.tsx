@@ -1,4 +1,4 @@
-import { LoginForm1 } from "./components/login-form-1"
+import { LoginForm } from "./components/login-form"
 import { Logo } from "@/components/logo"
 import Link from "next/link"
 
@@ -15,7 +15,7 @@ export default function Page() {
           </div>
           Claude Code
         </Link>
-        <LoginForm1 />
+        <LoginForm />
       </div>
     </div>
   )

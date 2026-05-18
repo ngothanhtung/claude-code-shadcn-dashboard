@@ -49,11 +49,6 @@ const data = {
           url: "/dashboard-2",
           icon: LayoutPanelLeft,
         },
-        {
-          title: "Dashboard 3",
-          url: "/dashboard-3",
-          icon: Megaphone,
-        },
       ],
     },
     {
