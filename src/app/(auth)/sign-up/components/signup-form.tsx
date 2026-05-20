@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form"
 import { useRouter } from "next/navigation"
 import { z } from "zod"
 import { cn } from "@/lib/utils"
+import { signIn } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -26,6 +27,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox"
 import {
   signUpWithEmailPassword,
+  signInWithGoogle,
   getFirebaseAuthErrorMessage,
 } from "@/lib/firebase/auth"
 
@@ -74,7 +76,46 @@ export function SignupForm({
     const displayName = `${data.firstName} ${data.lastName}`.trim()
 
     try {
-      await signUpWithEmailPassword(data.email, data.password, displayName)
+      const userCredential = await signUpWithEmailPassword(
+        data.email,
+        data.password,
+        displayName
+      )
+      const idToken = await userCredential.user.getIdToken()
+
+      const result = await signIn("credentials", {
+        idToken,
+        redirect: false,
+      })
+
+      if (result?.error) {
+        throw new Error(result.error)
+      }
+
+      router.push("/dashboard")
+    } catch (error) {
+      setGlobalError(getFirebaseAuthErrorMessage(error, "signup"))
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  async function handleGoogleSignup() {
+    setIsLoading(true)
+    setGlobalError(null)
+    try {
+      const userCredential = await signInWithGoogle()
+      const idToken = await userCredential.user.getIdToken()
+
+      const result = await signIn("credentials", {
+        idToken,
+        redirect: false,
+      })
+
+      if (result?.error) {
+        throw new Error(result.error)
+      }
+
       router.push("/dashboard")
     } catch (error) {
       setGlobalError(getFirebaseAuthErrorMessage(error, "signup"))
@@ -204,6 +245,7 @@ export function SignupForm({
                     className="w-full cursor-pointer"
                     type="button"
                     disabled={isLoading}
+                    onClick={handleGoogleSignup}
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                       <path

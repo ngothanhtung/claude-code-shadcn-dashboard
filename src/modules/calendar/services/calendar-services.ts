@@ -3,7 +3,11 @@ import { calendars, eventDates, events } from "./calendar-mock-data"
 import { type CalendarEvent } from "./types/calendar-types"
 import type { Calendar } from "./types/calendar-types"
 
-type FirestoreDateLike = Date | string | { toDate: () => Date }
+type FirestoreDateLike =
+  | Date
+  | string
+  | { toDate: () => Date }
+  | { seconds: number; nanoseconds?: number }
 
 type StoredCalendarEvent = Omit<CalendarEvent, "date"> & {
   date: FirestoreDateLike
@@ -23,7 +27,18 @@ function normalizeDate(date: FirestoreDateLike) {
     return new Date(date)
   }
 
-  return date.toDate()
+  if (date && typeof date === "object") {
+    if ("toDate" in date && typeof date.toDate === "function") {
+      return date.toDate()
+    }
+    if ("seconds" in date && typeof date.seconds === "number") {
+      return new Date(
+        date.seconds * 1000 + Math.round((date.nanoseconds ?? 0) / 1000000)
+      )
+    }
+  }
+
+  return new Date(date as any)
 }
 
 export async function getCalendarData() {

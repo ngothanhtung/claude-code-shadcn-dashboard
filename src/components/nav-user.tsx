@@ -9,6 +9,7 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { signOut } from "next-auth/react"
 
 import { signOutUser } from "@/lib/firebase/auth"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -42,9 +43,12 @@ export function NavUser({
   const fallback = getUserFallback(user.name, user.email)
 
   async function handleLogout() {
-    await signOutUser()
-    router.push("/sign-in")
-    router.refresh()
+    try {
+      await signOutUser()
+    } catch (e) {
+      console.warn("Failed to sign out from Firebase Client:", e)
+    }
+    await signOut({ callbackUrl: "/sign-in" })
   }
 
   return (

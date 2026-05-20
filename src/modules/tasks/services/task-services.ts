@@ -17,7 +17,7 @@ const TASKS_COLLECTION = "tasks"
 export async function getTasks(): Promise<Task[]> {
   const snapshot = await getDocs(collection(db, TASKS_COLLECTION))
 
-  return snapshot.docs.map((document) => {
+  const result = snapshot.docs.map((document) => {
     const data = document.data() as Task
 
     return {
@@ -25,6 +25,8 @@ export async function getTasks(): Promise<Task[]> {
       id: data.id ?? document.id,
     }
   })
+
+  return JSON.parse(JSON.stringify(result))
 }
 
 export async function seedTasksWithClient(): Promise<Task[]> {

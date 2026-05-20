@@ -12,7 +12,7 @@ export async function getFirestoreCollection<T>(
       return fallbackData
     }
 
-    return snapshot.docs.map((doc) => {
+    const result = snapshot.docs.map((doc) => {
       const data = doc.data() as T
       const dataWithId = data as T & { id?: string | number }
 
@@ -21,6 +21,8 @@ export async function getFirestoreCollection<T>(
         id: dataWithId.id ?? doc.id,
       }
     })
+
+    return JSON.parse(JSON.stringify(result))
   } catch (error) {
     console.warn(`Failed to load ${collectionName} from Firestore. Falling back to local mock data.`, error)
     return fallbackData
@@ -39,7 +41,8 @@ export async function getFirestoreDocumentCollection<T>(
       return fallbackData
     }
 
-    return snapshot.docs.map((doc) => doc.data() as T)
+    const result = snapshot.docs.map((doc) => doc.data() as T)
+    return JSON.parse(JSON.stringify(result))
   } catch (error) {
     console.warn(`Failed to load ${collectionName} from Firestore. Falling back to local mock data.`, error)
     return fallbackData

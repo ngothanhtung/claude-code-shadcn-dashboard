@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { cn } from "@/lib/utils"
+import { signIn } from "next-auth/react"
 import {
   getFirebaseAuthErrorMessage,
   signInWithEmailPassword,
@@ -53,7 +54,21 @@ export function LoginForm({
   async function onSubmit(values: LoginFormValues) {
     try {
       form.clearErrors("root")
-      await signInWithEmailPassword(values.email, values.password)
+      const userCredential = await signInWithEmailPassword(
+        values.email,
+        values.password
+      )
+      const idToken = await userCredential.user.getIdToken()
+
+      const result = await signIn("credentials", {
+        idToken,
+        redirect: false,
+      })
+
+      if (result?.error) {
+        throw new Error(result.error)
+      }
+
       router.push("/dashboard")
       router.refresh()
     } catch (error) {
@@ -67,7 +82,18 @@ export function LoginForm({
     try {
       setIsGoogleLoading(true)
       form.clearErrors("root")
-      await signInWithGoogle()
+      const userCredential = await signInWithGoogle()
+      const idToken = await userCredential.user.getIdToken()
+
+      const result = await signIn("credentials", {
+        idToken,
+        redirect: false,
+      })
+
+      if (result?.error) {
+        throw new Error(result.error)
+      }
+
       router.push("/dashboard")
       router.refresh()
     } catch (error) {

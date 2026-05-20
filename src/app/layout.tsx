@@ -3,6 +3,7 @@ import "./globals.css";
 
 import { ThemeProvider } from "@/components/theme-provider";
 import { SidebarConfigProvider } from "@/contexts/sidebar-context";
+import { AuthProvider } from "@/components/auth-provider";
 import { inter } from "@/lib/fonts";
 
 export const metadata: Metadata = {
@@ -19,9 +20,11 @@ export default function RootLayout({
     <html lang="en" className={`${inter.variable} antialiased`}>
       <body className={inter.className}>
         <ThemeProvider defaultTheme="system" storageKey="nextjs-ui-theme">
-          <SidebarConfigProvider>
-            {children}
-          </SidebarConfigProvider>
+          <AuthProvider>
+            <SidebarConfigProvider>
+              {children}
+            </SidebarConfigProvider>
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

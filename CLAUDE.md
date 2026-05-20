@@ -18,7 +18,7 @@
 | Tables        | @tanstack/react-table 8.21.3                                 |
 | Forms         | react-hook-form + @hookform/resolvers + zod 4.3.2            |
 | State         | Zustand 5.0.9                                                |
-| Auth/Database | Firebase Auth (client) + Firebase Admin (server) + Firestore |
+| Auth/Database | NextAuth.js v5 + Firebase Auth & Firebase Admin + Firestore  |
 | Storage       | Firebase Storage                                             |
 | Charts        | Recharts 3.6.0                                               |
 | Theme         | next-themes + custom ThemeProvider + SidebarConfigProvider   |
@@ -35,6 +35,7 @@ src/
     (auth)/                     # Route group: không sidebar
       sign-in/, sign-up/, forgot-password/
       errors/                   # forbidden, internal-server-error, not-found, unauthorized, under-maintenance
+    api/auth/[...nextauth]/     # NextAuth API route handlers (GET/POST)
     (dashboard)/                # Route group: có sidebar
       dashboard/, dashboard-2/, dashboard-3/
       tasks/, users/, chat/, mail/, calendar/
@@ -42,11 +43,13 @@ src/
       mock-data/                # Firestore seed UI
       settings/                 # user, account, billing, appearance, notifications, connections
     landing/                    # Public landing page
-    layout.tsx                  # Root layout (ThemeProvider, SidebarConfigProvider)
+    layout.tsx                  # Root layout (ThemeProvider, SidebarConfigProvider, AuthProvider)
   components/
     ui/                         # 40 shadcn/ui components
     app-sidebar.tsx, site-header.tsx, site-footer.tsx
     theme-provider.tsx, mode-toggle.tsx
+    auth-provider.tsx           # NextAuth SessionProvider wrapper
+    firebase-session-sync.tsx   # Client session synchronization for Firebase SDK
     theme-customizer/           # Panel tùy chỉnh theme/layout
   modules/                      # Feature modules — xem mục "Module Pattern" bên dưới
     tasks/, users/, chat/, mail/, calendar/
@@ -65,6 +68,11 @@ src/
     theme-context.ts            # ThemeProviderContext (dark/light/system)
     sidebar-context.tsx         # SidebarConfigProvider + useSidebarConfig
   hooks/                        # use-theme, use-sidebar-config, ...
+  types/
+    next-auth.d.ts              # NextAuth types & module augmentation
+  auth.config.ts                # NextAuth edge-compatible base configuration
+  auth.ts                       # NextAuth node-compatible main initialization
+  proxy.ts                      # Next.js 16 route protection proxy
 ```
 
 <!-- markdownlint-disable MD040 -->
@@ -142,19 +150,19 @@ const data = await getFirestoreCollection<TaskItem>("tasks", TaskMockData)
 - Thêm `seededAt: FieldValue.serverTimestamp()` vào mỗi document
 - UI seeder ở `/mock-data` cho phép seed từng feature hoặc tất cả
 
-### Auth (src/lib/firebase/auth.ts)
+### Auth (src/lib/firebase/auth.ts & src/auth.ts)
 
-- `signInWithEmailPassword(email, password)`
-- `signUpWithEmailPassword(email, password, displayName)`
-- Error messages bằng tiếng Việt
+- Firebase Client Auth xử lý các luồng đăng nhập/đăng ký tại frontend.
+- NextAuth `CredentialsProvider` đóng vai trò là ranh giới quản lý phiên (session boundary), xác thực Firebase ID Token phía máy chủ thông qua Firebase Admin SDK và tạo Custom Token để đồng bộ ngược lại với Firebase Client SDK.
+- `src/proxy.ts` thực hiện bảo vệ định tuyến (route protection) trong Next.js 16 bằng cách kiểm tra Session cookie của NextAuth.
 
 ## Environment Variables
 
 **Client Firebase** (Next.js client-side, ký tự `NEXT_PUBLIC_`):
 `NEXT_PUBLIC_FIREBASE_API_KEY`, `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`, `NEXT_PUBLIC_FIREBASE_PROJECT_ID`, `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`, `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`, `NEXT_PUBLIC_FIREBASE_APP_ID`, `NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID`
 
-**Server Firebase Admin** (server-only, không `NEXT_PUBLIC_`):
-`FIREBASE_ADMIN_PROJECT_ID`, `FIREBASE_ADMIN_CLIENT_EMAIL`, `FIREBASE_ADMIN_PRIVATE_KEY`
+**Server (Firebase Admin & NextAuth)** (server-only, không `NEXT_PUBLIC_`):
+`FIREBASE_ADMIN_PROJECT_ID`, `FIREBASE_ADMIN_CLIENT_EMAIL`, `FIREBASE_ADMIN_PRIVATE_KEY`, `AUTH_SECRET`
 
 Xem `.env.example` để biết đầy đủ template.
 

@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { onAuthStateChanged, type User } from "firebase/auth"
+import { useSession } from "next-auth/react"
 import {
   LayoutPanelLeft,
   LayoutDashboard,
@@ -20,7 +20,6 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { Logo } from "@/components/logo"
-import { auth } from "@/lib/firebase/client"
 
 import { NavMain } from "@/components/nav-main"
 import { NavUser } from "@/components/nav-user"
@@ -182,28 +181,16 @@ const data = {
   ],
 }
 
-function getUserName(user: User | null) {
-  if (!user) return "Guest"
-  if (user.displayName) return user.displayName
-  if (user.email) return user.email.split("@")[0]
-  return "User"
-}
-
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const [currentUser, setCurrentUser] = React.useState<User | null>(null)
-  const [isAuthReady, setIsAuthReady] = React.useState(false)
-
-  React.useEffect(() => {
-    return onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user)
-      setIsAuthReady(true)
-    })
-  }, [])
+  const { data: session, status } = useSession()
 
   const user = {
-    name: isAuthReady ? getUserName(currentUser) : "Loading...",
-    email: currentUser?.email ?? "",
-    avatar: currentUser?.photoURL ?? "",
+    name:
+      status === "loading"
+        ? "Loading..."
+        : session?.user?.name || session?.user?.email?.split("@")[0] || "Guest",
+    email: session?.user?.email ?? "",
+    avatar: session?.user?.image ?? "",
   }
 
   return (
