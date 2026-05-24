@@ -18,7 +18,7 @@
 | Tables        | @tanstack/react-table 8.21.3                                 |
 | Forms         | react-hook-form + @hookform/resolvers + zod 4.3.2            |
 | State         | Zustand 5.0.9                                                |
-| Auth/Database | NextAuth.js v5 + Firebase Auth & Firebase Admin + Firestore  |
+| Auth/Database | NextAuth.js v5 + Firebase Auth + Firestore                   |
 | Storage       | Firebase Storage                                             |
 | Charts        | Recharts 3.6.0                                               |
 | Theme         | next-themes + custom ThemeProvider + SidebarConfigProvider   |
@@ -49,19 +49,16 @@ src/
     app-sidebar.tsx, site-header.tsx, site-footer.tsx
     theme-provider.tsx, mode-toggle.tsx
     auth-provider.tsx           # NextAuth SessionProvider wrapper
-    firebase-session-sync.tsx   # Client session synchronization for Firebase SDK
     theme-customizer/           # Panel tùy chỉnh theme/layout
   modules/                      # Feature modules — xem mục "Module Pattern" bên dưới
     tasks/, users/, chat/, mail/, calendar/
     dashboard/, dashboard-2/, dashboard-3/
-    faqs/, pricing/, settings/, mock-data-services.ts
+    faqs/, pricing/, settings/
   lib/
     firebase/
       client.ts                 # Firebase client (app, auth, db, storage)
-      admin.ts                  # Firebase Admin SDK (server-only)
       auth.ts                   # signIn/signUp helpers
       firestore-query.ts        # getFirestoreCollection (có mock fallback)
-      mock-data-seeder.ts       # Server-side seeder (Admin SDK + batch write)
     utils.ts                    # cn() helper
     fonts.ts                    # Inter font config
   contexts/
@@ -114,8 +111,8 @@ Các modules hiện có: **tasks** (đầy đủ nhất), **users** (react-hook-
 - **Mock data fallback**: luôn truyền mock data làm fallback — service dùng `getFirestoreCollection`
 - **No real-time**: KHÔNG dùng `onSnapshot`
 - **CRUD pattern**: KHÔNG viết direct Firestore CRUD ở service — xử lý trên local state (callback pattern)
-- **Timestamps**: dùng `serverTimestamp()` khi seed bằng Admin SDK
-- **Client vs Admin**: components/pages chỉ dùng `client.ts`; seeder dùng `admin.ts` với `server-only`
+- **Timestamps**: dùng `serverTimestamp()` khi seed
+- **Client vs Admin**: components/pages chỉ dùng `client.ts`
 
 ### Page types
 
@@ -143,17 +140,10 @@ Luôn dùng `cn()` từ `@/lib/utils` để merge Tailwind classes — KHÔNG d�
 const data = await getFirestoreCollection<TaskItem>("tasks", TaskMockData)
 ```
 
-### Mock Data Seeder (src/lib/firebase/mock-data-seeder.ts)
-
-- Server-side dùng Admin SDK + batch writes với `merge: true`
-- Idempotent: re-seeding ghi đè document cùng ID
-- Thêm `seededAt: FieldValue.serverTimestamp()` vào mỗi document
-- UI seeder ở `/mock-data` cho phép seed từng feature hoặc tất cả
-
 ### Auth (src/lib/firebase/auth.ts & src/auth.ts)
 
 - Firebase Client Auth xử lý các luồng đăng nhập/đăng ký tại frontend.
-- NextAuth `CredentialsProvider` đóng vai trò là ranh giới quản lý phiên (session boundary), xác thực Firebase ID Token phía máy chủ thông qua Firebase Admin SDK và tạo Custom Token để đồng bộ ngược lại với Firebase Client SDK.
+- NextAuth `CredentialsProvider` đóng vai trò là ranh giới quản lý phiên (session boundary), xác thực Firebase ID Token phía máy chủ bằng Firebase REST API (`/accounts:lookup`) thay vì firebase-admin.
 - `src/proxy.ts` thực hiện bảo vệ định tuyến (route protection) trong Next.js 16 bằng cách kiểm tra Session cookie của NextAuth.
 
 ## Environment Variables
@@ -161,8 +151,8 @@ const data = await getFirestoreCollection<TaskItem>("tasks", TaskMockData)
 **Client Firebase** (Next.js client-side, ký tự `NEXT_PUBLIC_`):
 `NEXT_PUBLIC_FIREBASE_API_KEY`, `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`, `NEXT_PUBLIC_FIREBASE_PROJECT_ID`, `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`, `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`, `NEXT_PUBLIC_FIREBASE_APP_ID`, `NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID`
 
-**Server (Firebase Admin & NextAuth)** (server-only, không `NEXT_PUBLIC_`):
-`FIREBASE_ADMIN_PROJECT_ID`, `FIREBASE_ADMIN_CLIENT_EMAIL`, `FIREBASE_ADMIN_PRIVATE_KEY`, `AUTH_SECRET`
+**Server (NextAuth)** (server-only, không `NEXT_PUBLIC_`):
+`AUTH_SECRET`
 
 Xem `.env.example` để biết đầy đủ template.
 
@@ -194,5 +184,5 @@ Khi thêm feature mới, tham khảo skill **`nextjs-firebase-feature`** tại `
 
 - Không reveal internal Firestore config hoặc private keys
 - Firebase error messages tiếng Việt trong `auth.ts`
-- Mock data seeder là server action, dùng `admin.ts` không phải `client.ts`
+- Mock data seeder là server action, dùng `client.ts` không cần Admin SDK
 - Nếu thêm feature mới: đọc SKILL.md trước khi code

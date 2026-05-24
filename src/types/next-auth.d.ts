@@ -6,18 +6,15 @@ declare module "next-auth" {
     user: {
       id: string
     } & DefaultSession["user"]
-    firebaseToken?: string
   }
 
   interface User {
     id?: string
-    customToken?: string
   }
 }
 
 declare module "next-auth/jwt" {
   interface JWT {
     uid?: string
-    customToken?: string
   }
 }
