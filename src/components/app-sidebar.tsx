@@ -12,10 +12,8 @@ import {
   Calendar,
   Shield,
   AlertTriangle,
-  Settings,
   HelpCircle,
   CreditCard,
-  LayoutTemplate,
   Users,
 } from "lucide-react"
 import Link from "next/link"
@@ -84,12 +82,6 @@ const data = {
       label: "Pages",
       items: [
         {
-          title: "Landing",
-          url: "/landing",
-          target: "_blank",
-          icon: LayoutTemplate,
-        },
-        {
           title: "Auth Pages",
           url: "#",
           icon: Shield,
@@ -132,37 +124,6 @@ const data = {
             {
               title: "Under Maintenance",
               url: "/errors/under-maintenance",
-            },
-          ],
-        },
-        {
-          title: "Settings",
-          url: "#",
-          icon: Settings,
-          items: [
-            {
-              title: "User Settings",
-              url: "/settings/user",
-            },
-            {
-              title: "Account Settings",
-              url: "/settings/account",
-            },
-            {
-              title: "Plans & Billing",
-              url: "/settings/billing",
-            },
-            {
-              title: "Appearance",
-              url: "/settings/appearance",
-            },
-            {
-              title: "Notifications",
-              url: "/settings/notifications",
-            },
-            {
-              title: "Connections",
-              url: "/settings/connections",
             },
           ],
         },

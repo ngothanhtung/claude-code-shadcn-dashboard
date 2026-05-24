@@ -62,21 +62,6 @@ export function SiteHeader({ onThemeCustomizerOpen }: SiteHeaderProps) {
               className="hidden sm:flex"
             >
               <a
-                href="/landing"
-                rel="noopener noreferrer"
-                target="_blank"
-                className="dark:text-foreground"
-              >
-                Landing Page
-              </a>
-            </Button>
-            <Button
-              variant="ghost"
-              asChild
-              size="sm"
-              className="hidden sm:flex"
-            >
-              <a
                 href="https://github.com/ngothanhtung/claude-code-shadcn-dashboard"
                 rel="noopener noreferrer"
                 target="_blank"

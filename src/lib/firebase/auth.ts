@@ -5,6 +5,7 @@ import {
   EmailAuthProvider,
   GoogleAuthProvider,
   reauthenticateWithCredential,
+  sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signInWithPopup,
   signOut,
@@ -78,6 +79,8 @@ export function getFirebaseAuthErrorMessage(error: unknown, mode: "signin" | "si
         return "Trình duyệt đang chặn cửa sổ đăng nhập Google. Vui lòng cho phép popup và thử lại."
       case "auth/user-mismatch":
         return "Xác thực thất bại. Vui lòng kiểm tra lại mật khẩu hiện tại."
+      case "auth/user-not-found":
+        return "Không tìm thấy tài khoản với email này."
       case "auth/requires-recent-login":
         return "Vui lòng đăng nhập lại trước khi thực hiện thao tác này."
       case "auth/account-exists-with-different-credential":
@@ -103,6 +106,10 @@ export async function changePassword(currentPassword: string, newPassword: strin
   await updatePassword(user, newPassword)
 }
 
+export async function resetPassword(email: string) {
+  await sendPasswordResetEmail(auth, email)
+}
+
 export async function updateDisplayName(displayName: string) {
   const user = auth.currentUser
   if (!user) throw new Error("auth/no-current-user")
@@ -113,6 +120,48 @@ export async function updateDisplayName(displayName: string) {
 export async function getUserProfile(uid: string): Promise<UserProfile | null> {
   const snap = await getDoc(doc(db, "users", uid))
   return snap.exists() ? (snap.data() as UserProfile) : null
+}
+
+export interface UserNotifications {
+  emailSecurity: boolean
+  emailUpdates: boolean
+  emailMarketing: boolean
+  pushMessages: boolean
+  pushMentions: boolean
+  pushTasks: boolean
+  emailFrequency: string
+  quietHoursStart: string
+  quietHoursEnd: string
+  channelEmail: boolean
+  channelPush: boolean
+  channelSms: boolean
+  orderUpdatesEmail: boolean
+  orderUpdatesBrowser: boolean
+  orderUpdatesApp: boolean
+  invoiceRemindersEmail: boolean
+  invoiceRemindersBrowser: boolean
+  invoiceRemindersApp: boolean
+  promotionalOffersEmail: boolean
+  promotionalOffersBrowser: boolean
+  promotionalOffersApp: boolean
+  systemMaintenanceEmail: boolean
+  systemMaintenanceBrowser: boolean
+  systemMaintenanceApp: boolean
+  notificationTiming: string
+}
+
+export async function getUserNotifications(uid: string): Promise<UserNotifications | null> {
+  const snap = await getDoc(doc(db, "users", uid))
+  if (!snap.exists()) return null
+  const data = snap.data() as Partial<UserProfile & { notifications: UserNotifications }>
+  return data.notifications ?? null
+}
+
+export async function saveUserNotifications(notifications: UserNotifications) {
+  const user = auth.currentUser
+  if (!user) throw new Error("auth/no-current-user")
+
+  await setDoc(doc(db, "users", user.uid), { notifications }, { merge: true })
 }
 
 export async function saveUserProfile(data: {
