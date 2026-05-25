@@ -15,7 +15,16 @@ import {
 
 import { auth } from "@/lib/firebase/client"
 import { db } from "@/lib/firebase/client"
-import { collection, deleteDoc, doc, getDoc, getDocs, query, setDoc, where } from "firebase/firestore"
+import {
+  collection,
+  deleteDoc,
+  doc,
+  getDoc,
+  getDocs,
+  query,
+  setDoc,
+  where,
+} from "firebase/firestore"
 
 export interface UserProfile {
   uid: string
@@ -54,7 +63,10 @@ export async function signUpWithEmailPassword(
   return credential
 }
 
-export function getFirebaseAuthErrorMessage(error: unknown, mode: "signin" | "signup" = "signin") {
+export function getFirebaseAuthErrorMessage(
+  error: unknown,
+  mode: "signin" | "signup" = "signin"
+) {
   if (error instanceof FirebaseError) {
     switch (error.code) {
       case "auth/invalid-credential":
@@ -97,7 +109,10 @@ export function getFirebaseAuthErrorMessage(error: unknown, mode: "signin" | "si
     : "Không thể đăng nhập. Vui lòng thử lại."
 }
 
-export async function changePassword(currentPassword: string, newPassword: string) {
+export async function changePassword(
+  currentPassword: string,
+  newPassword: string
+) {
   const user = auth.currentUser
   if (!user || !user.email) throw new Error("auth/no-current-user")
 
@@ -150,10 +165,14 @@ export interface UserNotifications {
   notificationTiming: string
 }
 
-export async function getUserNotifications(uid: string): Promise<UserNotifications | null> {
+export async function getUserNotifications(
+  uid: string
+): Promise<UserNotifications | null> {
   const snap = await getDoc(doc(db, "users", uid))
   if (!snap.exists()) return null
-  const data = snap.data() as Partial<UserProfile & { notifications: UserNotifications }>
+  const data = snap.data() as Partial<
+    UserProfile & { notifications: UserNotifications }
+  >
   return data.notifications ?? null
 }
 
