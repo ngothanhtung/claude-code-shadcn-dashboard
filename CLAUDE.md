@@ -105,6 +105,95 @@ Các modules hiện có: **tasks** (đầy đủ nhất), **users** (react-hook-
 
 ## Quy ước quan trọng
 
+### API Routes
+
+API routes không yêu cầu xác thực (public APIs) cần tuân thủ:
+
+**CORS Headers**: Khai báo và dùng cho mọi response:
+
+```typescript
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+}
+```
+
+**OPTIONS handler**: Thêm cho mọi route để hỗ trợ preflight:
+
+```typescript
+export async function OPTIONS() {
+  return new NextResponse(null, { status: 204, headers: CORS_HEADERS })
+}
+```
+
+**Response pattern**: Luôn truyền `CORS_HEADERS` vào mọi `NextResponse.json()` và status code phù hợp:
+
+- **201** — Thành công (tạo mới)
+- **200** — Thành công (đọc/cập nhật)
+- **400** — Dữ liệu không hợp lệ
+- **500** — Lỗi server
+
+**Response body**: Luôn có `success` (boolean) và `message` (string). Dùng `errors` (object) cho validation errors.
+
+```typescript
+// Thành công
+return NextResponse.json({ success: true, message: "..." }, { status: 201, headers: CORS_HEADERS })
+
+// Thất bại
+return NextResponse.json({ success: false, message: "..." }, { status: 500, headers: CORS_HEADERS })
+```
+
+**Middleware tổng quát cho CORS**: Với Next.js 16, có thể khai báo CORS headers trong `next.config.ts` hoặc dùng edge middleware. Tuy nhiên vẫn cần OPTIONS handler riêng cho mỗi route group.
+
+**Ví dụ hoàn chỉnh**:
+
+```typescript
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+}
+
+export async function OPTIONS() {
+  return new NextResponse(null, { status: 204, headers: CORS_HEADERS })
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json()
+    const parsed = CustomerFormSchema.safeParse(body)
+
+    if (!parsed.success) {
+      return NextResponse.json(
+        { success: false, message: "Dữ liệu không hợp lệ", errors: parsed.error.flatten().fieldErrors },
+        { status: 400, headers: CORS_HEADERS }
+      )
+    }
+
+    const { fullName, email, phoneNumber, serviceName } = parsed.data
+
+    await addDoc(collection(db, "customers"), {
+      fullName, email, phoneNumber, serviceName,
+      createdAt: serverTimestamp(),
+    })
+
+    return NextResponse.json(
+      { success: true, message: "Gửi thông tin thành công!" },
+      { status: 201, headers: CORS_HEADERS }
+    )
+  } catch (error) {
+    console.error("[API Error]", error)
+    return NextResponse.json(
+      { success: false, message: "Đã xảy ra lỗi. Vui lòng thử lại." },
+      { status: 500, headers: CORS_HEADERS }
+    )
+  }
+}
+```
+
+## Quy ước quan trọng
+
 ### Firebase Firestore
 
 - **Collection naming**: số nhiều, snake_case (`tasks`, `users`, `conversations`, `messages`)
