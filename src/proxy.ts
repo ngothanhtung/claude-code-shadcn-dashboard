@@ -6,6 +6,13 @@ export async function proxy(request: NextRequest) {
   // Get NextAuth session
   const session = await auth()
 
+  const isApiRoute = request.nextUrl.pathname.startsWith("/api/")
+
+  // Allow API routes to be accessed without authentication (you can customize this as needed)
+  if (isApiRoute) {
+    return NextResponse.next()
+  }
+
   const isLoggedIn = !!session?.user
   const isAuthPage =
     request.nextUrl.pathname.startsWith("/sign-in") ||
