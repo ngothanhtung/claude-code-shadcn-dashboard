@@ -1,7 +1,7 @@
-import { ChartAreaInteractive } from "@/modules/dashboard/components/chart-area-interactive"
-import { DataTable } from "@/modules/dashboard/components/data-table"
-import { SectionCards } from "@/modules/dashboard/components/section-cards"
-import { getDashboardData } from "@/modules/dashboard/services/dashboard-services"
+import { ChartAreaInteractive } from "@/modules/dashboard-1/components/chart-area-interactive"
+import { DataTable } from "@/modules/dashboard-1/components/data-table"
+import { SectionCards } from "@/modules/dashboard-1/components/section-cards"
+import { getDashboardData } from "@/modules/dashboard-1/services/dashboard-services"
 
 export default async function Page() {
   const { data, pastPerformanceData, keyPersonnelData, focusDocumentsData } =
@@ -13,7 +13,9 @@ export default async function Page() {
       <div className="px-4 lg:px-6">
         <div className="flex flex-col gap-2">
           <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground">Welcome to your admin dashboard</p>
+          <p className="text-muted-foreground">
+            Welcome to your admin dashboard
+          </p>
         </div>
       </div>
 
