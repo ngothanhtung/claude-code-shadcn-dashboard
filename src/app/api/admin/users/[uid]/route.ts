@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 
 import { getAdminAuth, getAdminDb } from "@/lib/firebase/admin"
+import { getAdminApiErrorResponse } from "@/lib/auth/admin-api"
 import {
   updateUserPayloadSchema,
 } from "@/modules/users/services/types/user-types"
@@ -19,6 +20,9 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ uid: string }> }
 ) {
+  const authError = await getAdminApiErrorResponse(CORS_HEADERS)
+  if (authError) return authError
+
   try {
     const { uid } = await params
     const body = await request.json()
@@ -93,6 +97,9 @@ export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ uid: string }> }
 ) {
+  const authError = await getAdminApiErrorResponse(CORS_HEADERS)
+  if (authError) return authError
+
   try {
     const { uid } = await params
     const auth = getAdminAuth()

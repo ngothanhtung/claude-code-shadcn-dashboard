@@ -1,6 +1,6 @@
 ---
 name: nextjs-firebase-feature
-description: Build or update a Next.js App Router dashboard feature module backed by Firebase Firestore. Use for feature folders like src/modules/<feature> that need typed services, mock seed data, TanStack tables, CRUD dialogs/actions, and shadcn/ui components. Supports both client-side Firestore (for simple CRUD) and Admin SDK via API routes (for privileged operations like managing Firebase Auth).
+description: Build or update a Next.js App Router dashboard feature module backed by Firebase Firestore. Use for feature folders like src/modules/<feature> that need typed services, mock seed data, TanStack tables, CRUD dialogs/actions, and shadcn/ui components. Supports both client-side Firestore (for simple CRUD) and Admin SDK via API routes (for privileged operations like managing Firebase Auth). Covers the project's auth/roles/permissions model (admin route guard, role-based sidebar, NextAuth session augmentation).
 ---
 
 # Next.js Firebase Feature
@@ -19,6 +19,7 @@ Use this skill when creating or updating a dashboard module that follows the cur
 - Use `zod` schemas for feature item types. Mock data must be parsed through the schema.
 - Use `@tanstack/react-table` for tables.
 - Use shadcn/ui and lucide-react for UI.
+- Auth, roles, and permissions live in `src/lib/auth/` — see [Authentication & Authorization](#authentication--authorization). Admin pages go under `src/app/(private)/admin/<feature>/`, and every `/api/admin/*` route must call the `getAdminApiErrorResponse` guard before doing any work.
 
 ## Choosing the right SDK
 
@@ -32,12 +33,65 @@ Use this skill when creating or updating a dashboard module that follows the cur
 
 **Rule of thumb:** if the operation touches Firebase Auth or requires bypassing Firestore Security Rules, route it through an API route backed by the Admin SDK. Everything else goes through the client SDK.
 
+## Authentication & Authorization
+
+The project has a centralized auth/RBAC layer in `src/lib/auth/` with three modules:
+
+| File | Purpose |
+|---|---|
+| `permissions.ts` | Pure constants (`ADMIN_ROLE_ID`, `ADMIN_EMAIL`) and check helpers (`hasAdminAccess`, `isAdminIdentifier`). No side effects — safe to import anywhere. |
+| `user-access.ts` | Firestore-backed resolver called in the NextAuth `authorize` and `jwt` callbacks. Reads `users` + `users_roles` collections to produce `{ roles: string[], isAdmin: boolean }`. |
+| `admin-api.ts` | Express-style guard for Admin API route handlers. Returns a 401/403 JSON response if the caller is unauthenticated or not admin, or `null` if authorization passes. |
+
+### How session carries roles
+
+In `src/auth.ts` (NextAuth v5):
+
+- `authorize` calls `getUserAuthorization(uid, email, name)` after verifying the Firebase ID token and attaches `roles` + `isAdmin` to the returned `User` object.
+- `jwt` stores `roles` and `isAdmin` on the token. On subsequent requests (token exists but `user` is null), it **re-fetches** authorization from Firestore — so role changes take effect without re-login.
+- `session` copies `token.roles` and `token.isAdmin` onto `session.user`.
+
+The NextAuth types in `src/types/next-auth.d.ts` augment `Session.user`, `User`, and `JWT` with `roles: string[]` and `isAdmin: boolean`.
+
+### Admin page guard (proxy.ts)
+
+`src/proxy.ts` redirects any request starting with `/admin` to `/errors/forbidden` when `hasAdminAccess(session.user)` is false. API routes bypass the middleware entirely — they handle their own auth via `getAdminApiErrorResponse`.
+
+### Admin API route guard pattern
+
+Every handler in `src/app/api/admin/<feature>/` must call the guard before doing any work:
+
+```ts
+import { getAdminApiErrorResponse } from "@/lib/auth/admin-api"
+
+export async function GET() {
+  const authError = await getAdminApiErrorResponse(CORS_HEADERS)
+  if (authError) return authError
+
+  // ... handler logic ...
+}
+```
+
+This replaces the previous pattern of unprotected API routes. The guard handles both 401 (no session) and 403 (session exists but not admin) cases with Vietnamese error messages.
+
+### Sidebar role filtering
+
+`src/components/app-sidebar.tsx` uses `hasAdminAccess(session?.user)` to conditionally filter navigation groups. The "Administration" group is only rendered for admin users. Non-admin users never see admin-only nav items.
+
+### Constants and conventions
+
+- `ADMIN_ROLE_ID = "role-admin"` — the Firestore role ID that grants admin access.
+- `ADMIN_EMAIL = "admin@claudecode.ai"` — hard-coded admin email (checked case-insensitively).
+- Role assignments live in the `users_roles` Firestore collection, keyed by `uid`.
+- The three-tier admin check in `hasAdminAccess`: (1) `user.isAdmin === true`, (2) email matches `ADMIN_EMAIL`, (3) `user.roles` includes `ADMIN_ROLE_ID`.
+
 ## Module Shape
 
 The `tasks` module is the **canonical reference** for Firestore-backed features. Its actual tree:
 
 ```text
-src/app/(private)/<feature>/page.tsx
+src/app/(private)/<feature>/page.tsx           # regular feature page
+src/app/(private)/admin/<feature>/page.tsx     # admin-only page (proxy.ts gates /admin/*)
 src/app/api/admin/<feature>/route.ts           # optional — only if you need Admin SDK
 src/app/api/admin/<feature>/[uid]/route.ts     # optional — dynamic route for single-item ops
 src/modules/<feature>/
@@ -223,6 +277,7 @@ Every API route must follow these conventions:
 // src/app/api/admin/users/route.ts
 import { NextRequest, NextResponse } from "next/server"
 import { getAdminAuth, getAdminDb } from "@/lib/firebase/admin"
+import { getAdminApiErrorResponse } from "@/lib/auth/admin-api"
 import { createUserPayloadSchema } from "@/modules/users/services/types/user-types"
 
 // --- CORS: declare once, reuse in every response ---
@@ -239,6 +294,10 @@ export async function OPTIONS() {
 
 // --- GET: list items ---
 export async function GET() {
+  // Every handler must check auth + admin role before doing any work
+  const authError = await getAdminApiErrorResponse(CORS_HEADERS)
+  if (authError) return authError
+
   try {
     const auth = getAdminAuth()
     const db = getAdminDb()
@@ -258,6 +317,9 @@ export async function GET() {
 
 // --- POST: create item ---
 export async function POST(request: NextRequest) {
+  const authError = await getAdminApiErrorResponse(CORS_HEADERS)
+  if (authError) return authError
+
   try {
     const body = await request.json()
     const parsed = createUserPayloadSchema.safeParse(body)
@@ -328,7 +390,7 @@ The Admin SDK singleton (`@/lib/firebase/admin`) supports three auth modes, trie
 
 ### Auth bypass note
 
-API routes bypass `proxy.ts` auth protection (all `/api/*` routes get `NextResponse.next()`). Your API route is responsible for its own auth verification if needed — e.g. check NextAuth session via `auth()` from `@/auth`, or rely on Firestore Security Rules for the underlying operations.
+API routes bypass `proxy.ts` auth protection (all `/api/*` routes get `NextResponse.next()`). Every Admin API route **must** call `getAdminApiErrorResponse(CORS_HEADERS)` at the top of each handler — it checks the NextAuth session and admin role, returning 401/403 if unauthorized. Do not leave Admin API routes unprotected.
 
 ### Client service → API route pattern
 
@@ -599,6 +661,8 @@ If an Admin SDK API route fails:
 ## Do Not
 
 - Do not import `@/lib/firebase/admin` in client components, page files, or module services — Admin SDK lives **only** in `src/app/api/admin/` route files.
+- Do not leave `/api/admin/*` handlers unprotected — every handler must call `getAdminApiErrorResponse(CORS_HEADERS)` first.
+- Do not import `@/lib/auth/admin-api` outside of `src/app/api/admin/` route files — that guard is for API routes only.
 - Do not use `"use server"` (server actions) — the project does not use them.
 - Do not create `mock-data-seeder.ts`.
 - Do not create a global `/mock-data` route for seeding modules.
@@ -606,6 +670,8 @@ If an Admin SDK API route fails:
 - Do not place seed rows in JSON files for Firestore-backed features.
 - Do not make CRUD local-only if the feature is Firestore-backed.
 - Do not hardcode Firebase config; always use `@/lib/firebase/client` or `@/lib/firebase/admin`.
+- Do not hardcode admin checks (email comparisons, role ID literals) in components or services — use `hasAdminAccess` from `@/lib/auth/permissions` instead.
 - Do not write a feature page under `src/app/(dashboard)/...` — the route group is `(private)`.
+- Do not put admin-only pages outside the `/admin` prefix — `proxy.ts` only gates paths starting with `/admin`.
 - Do not call `onSnapshot` unless the user explicitly asked for realtime.
 - Do not skip `CORS_HEADERS` or the `OPTIONS` handler in API routes — every API route file must include both.

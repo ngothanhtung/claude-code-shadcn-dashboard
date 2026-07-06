@@ -2,6 +2,7 @@ import { type UserRecord } from "firebase-admin/auth"
 import { NextRequest, NextResponse } from "next/server"
 
 import { getAdminAuth, getAdminDb } from "@/lib/firebase/admin"
+import { getAdminApiErrorResponse } from "@/lib/auth/admin-api"
 import {
   createUserPayloadSchema,
   type User,
@@ -122,6 +123,9 @@ async function listAllAuthUsersWithProfiles(): Promise<User[]> {
 // =====================================================
 
 export async function GET() {
+  const authError = await getAdminApiErrorResponse(CORS_HEADERS)
+  if (authError) return authError
+
   try {
     const users = await listAllAuthUsersWithProfiles()
     return NextResponse.json(
@@ -151,6 +155,9 @@ export async function GET() {
 // =====================================================
 
 export async function POST(request: NextRequest) {
+  const authError = await getAdminApiErrorResponse(CORS_HEADERS)
+  if (authError) return authError
+
   try {
     const body = await request.json()
     const parsed = createUserPayloadSchema.safeParse(body)

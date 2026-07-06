@@ -1,5 +1,8 @@
 import NextAuth from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
+
+import { getUserAuthorization } from "@/lib/auth/user-access"
+
 import { authConfig } from "./auth.config"
 
 async function verifyFirebaseIdToken(idToken: string) {
@@ -60,12 +63,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           const firebaseUser = await verifyFirebaseIdToken(
             credentials.idToken
           )
+          const authorization = await getUserAuthorization(
+            firebaseUser.uid,
+            firebaseUser.email,
+            firebaseUser.name
+          )
 
           return {
             id: firebaseUser.uid,
             name: firebaseUser.name,
             email: firebaseUser.email,
             image: firebaseUser.picture,
+            roles: authorization.roles,
+            isAdmin: authorization.isAdmin,
           }
         } catch (error) {
           console.error("Error authorizing with Firebase ID Token:", error)
@@ -78,12 +88,24 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async jwt({ token, user }) {
       if (user) {
         token.uid = user.id
+        token.roles = user.roles
+        token.isAdmin = user.isAdmin
+      } else if (token.uid) {
+        const authorization = await getUserAuthorization(
+          token.uid,
+          token.email,
+          token.name
+        )
+        token.roles = authorization.roles
+        token.isAdmin = authorization.isAdmin
       }
       return token
     },
     async session({ session, token }) {
       if (token) {
         session.user.id = token.uid as string
+        session.user.roles = token.roles ?? []
+        session.user.isAdmin = token.isAdmin ?? false
       }
       return session
     },
