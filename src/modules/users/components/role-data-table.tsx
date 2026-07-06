@@ -32,6 +32,8 @@ interface RoleDataTableProps<TData, TValue> {
   data: TData[]
   userRoles: UserRole[]
   onAddRole?: () => void
+  onSeedRoles?: () => void
+  isSeeding?: boolean
 }
 
 export function RoleDataTable<TData, TValue>({
@@ -39,6 +41,8 @@ export function RoleDataTable<TData, TValue>({
   data,
   userRoles,
   onAddRole,
+  onSeedRoles,
+  isSeeding = false,
 }: RoleDataTableProps<TData, TValue>) {
   const [rowSelection, setRowSelection] = React.useState({})
   const [columnVisibility, setColumnVisibility] =
@@ -70,8 +74,13 @@ export function RoleDataTable<TData, TValue>({
   })
 
   return (
-    <div className="space-y-4">
-      <RoleDataTableToolbar table={table} onAddRole={onAddRole} />
+    <div className="flex flex-col gap-4">
+      <RoleDataTableToolbar
+        table={table}
+        onAddRole={onAddRole}
+        onSeedRoles={onSeedRoles}
+        isSeeding={isSeeding}
+      />
       <div className="rounded-md border">
         <Table>
           <TableHeader>

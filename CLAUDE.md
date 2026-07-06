@@ -1,31 +1,43 @@
 # CLAUDE.md
 
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
 ## Tổng quan dự án
 
-Đây là template **Next.js 16 (App Router) dashboard** với TypeScript, shadcn/ui, Tailwind CSS v4, Firebase (Firestore + Auth + Storage), và Zustand. Cấu trúc theo pattern multi-feature: mỗi feature có service layer, components, và mock data riêng.
+Đây là template **Next.js 16 (App Router) dashboard** với TypeScript, shadcn/ui, Tailwind CSS v4, Firebase (Firestore + Auth + Storage + Admin), và Zustand. Cấu trúc theo pattern multi-feature: mỗi feature có service layer, components, và mock data riêng.
 
 ## Tech Stack
 
-<!-- markdownlint-disable MD060 -->
-
 | Category      | Choice                                                       |
 | ------------- | ------------------------------------------------------------ |
-| Framework     | Next.js 16.1.1 (App Router)                                  |
-| Language      | TypeScript 5.9.3                                             |
+| Framework     | Next.js 16.2 (App Router) + Turbopack                        |
+| Language      | TypeScript 5.9                                               |
 | Styling       | Tailwind CSS v4 + CSS variables                              |
-| UI Library    | shadcn/ui (style: `new-york`)                                |
+| UI Library    | shadcn/ui (style: `new-york`) — `@shadcn/react` + Radix      |
 | Icons         | lucide-react                                                 |
 | Tables        | @tanstack/react-table 8.21.3                                 |
-| Forms         | react-hook-form + @hookform/resolvers + zod 4.3.2            |
+| Forms         | react-hook-form + @hookform/resolvers + zod                  |
 | State         | Zustand 5.0.9                                                |
-| Auth/Database | NextAuth.js v5 + Firebase Auth + Firestore                   |
-| Storage       | Firebase Storage                                             |
-| Charts        | Recharts 3.6.0                                               |
+| Auth/Database | NextAuth.js v5 (Credentials) + Firebase Auth + Firestore     |
+| Storage       | Firebase Storage + Firebase Admin SDK                        |
+| Charts        | Recharts 3.x                                                 |
 | Theme         | next-themes + custom ThemeProvider + SidebarConfigProvider   |
-| Toast         | sonner 2.0.7                                                 |
-| Date          | date-fns 4.1.0 + react-day-picker 9.13.0                     |
+| Toast         | sonner 2.x                                                   |
+| Date          | date-fns 4.x + react-day-picker 10.x                         |
 
-<!-- markdownlint-enable MD060 -->
+## Commands
+
+Từ `package.json`:
+
+| Lệnh              | Mục đích                                |
+| ----------------- | --------------------------------------- |
+| `npm run dev`     | Chạy dev server (Next.js + Turbopack)   |
+| `npm run build`   | Production build                        |
+| `npm run start`   | Chạy production build                   |
+| `npm run lint`    | ESLint (next lint)                      |
+| `npx tsc --noEmit`| Type-check toàn project (không emit JS) |
+
+**Không có test framework** — project này không cấu hình Jest/Vitest. Khi verify thay đổi: dùng `npx tsc --noEmit` cho type-safety và `npm run build` để kiểm tra build sạch.
 
 ## Cấu trúc thư mục
 
@@ -36,79 +48,84 @@ src/
       sign-in/, sign-up/, forgot-password/
       errors/                   # forbidden, internal-server-error, not-found, unauthorized, under-maintenance
     api/auth/[...nextauth]/     # NextAuth API route handlers (GET/POST)
-    (dashboard)/                # Route group: có sidebar
-      dashboard/, dashboard-2/, dashboard-3/
+    (private)/                  # Route group: có sidebar + auth-bắt-buộc (xem proxy.ts)
+      dashboard/, dashboard-2/  # dashboard-3 đã được gộp vào dashboard-2
       tasks/, users/, chat/, calendar/
       mock-data/                # Firestore seed UI
-      settings/                 # user, account, billing, appearance, notifications, connections
+      settings/                 # user, account, appearance, notifications, connections
     landing/                    # Public landing page
     layout.tsx                  # Root layout (ThemeProvider, SidebarConfigProvider, AuthProvider)
   components/
-    ui/                         # 40 shadcn/ui components
+    ui/                         # shadcn/ui components + wrappers (chart, calendar, command-search, …)
     app-sidebar.tsx, site-header.tsx, site-footer.tsx
-    theme-provider.tsx, mode-toggle.tsx
+    theme-provider.tsx, mode-toggle.tsx, theme-customizer.tsx
     auth-provider.tsx           # NextAuth SessionProvider wrapper
-    theme-customizer/           # Panel tùy chỉnh theme/layout
-  modules/                      # Feature modules — xem mục "Module Pattern" bên dưới
-    tasks/, users/, chat/, calendar/
-    dashboard/, dashboard-2/, dashboard-3/
-    settings/
+    dynamic-imports.ts          # Dynamic import các thư viện nặng
+  modules/                      # Feature modules — xem "Module Pattern"
+    tasks/, users/, chat/, calendar/, dashboard-1/, dashboard-2/, settings/
   lib/
     firebase/
-      client.ts                 # Firebase client (app, auth, db, storage)
-      auth.ts                   # signIn/signUp helpers
-      firestore-query.ts        # getFirestoreCollection (có mock fallback)
-    utils.ts                    # cn() helper
+      client.ts                 # Firebase client (app, auth, db, storage) — validate env lúc load
+      admin.ts                  # Firebase Admin SDK (auth, db) — lazy init, hỗ trợ split env + JSON service account
+      auth.ts                   # signIn/signUp helpers (client-side)
+      firestore-query.ts        # getFirestoreCollection (Firestore + mock fallback)
+    utils.ts                    # cn() helper (clsx + tailwind-merge)
     fonts.ts                    # Inter font config
   contexts/
     theme-context.ts            # ThemeProviderContext (dark/light/system)
     sidebar-context.tsx         # SidebarConfigProvider + useSidebarConfig
-  hooks/                        # use-theme, use-sidebar-config, ...
+  hooks/                        # use-theme, use-sidebar-config, use-mobile, use-fullscreen, …
   types/
     next-auth.d.ts              # NextAuth types & module augmentation
+    theme.ts, theme-customizer.ts
+  config/                       # Static config (theme data, customizer constants)
+  utils/                        # tweakcn/shadcn theme presets
   auth.config.ts                # NextAuth edge-compatible base configuration
   auth.ts                       # NextAuth node-compatible main initialization
-  proxy.ts                      # Next.js 16 route protection proxy
+  proxy.ts                      # Next.js 16 route protection proxy (NextAuth session check)
 ```
-
-<!-- markdownlint-disable MD040 -->
 
 ## Module Pattern
 
 Mỗi feature theo cùng cấu trúc. **`tasks`** là canonical reference (đầy đủ nhất):
 
-```
-src/app/(dashboard)/<feature>/page.tsx
+```text
+src/app/(private)/<feature>/page.tsx        # Route
 src/modules/<feature>/
   services/
-    types/<feature>-types.ts      # zod schema + TypeScript interfaces
-    <feature>-mock-data.ts        # Static mock data (import JSON)
-    <feature>-services.ts        # Firestore query helpers
-    mock-data-services.ts        # Seeder cho feature này
-    data/<feature>.json           # JSON data file
+    types/<feature>-types.ts               # zod schema + TypeScript interfaces
+    <feature>-mock-data.ts                 # Static mock data (import JSON)
+    <feature>-services.ts                  # Firestore query helpers dùng getFirestoreCollection
+    <feature>-<role>-services.ts           # Feature-specific services (chart/statistics/…)
+    mock-data-services.ts                  # Seeder (optional)
+    data/<feature>.json                    # JSON data file (optional)
   components/
-    data-table.tsx                 # Tanstack Table wrapper
-    columns.tsx                    # Column definitions
-    data-table-toolbar.tsx         # Search, filter selects, add button
-    data-table-faceted-filter.tsx # Command-palette filter
-    data-table-pagination.tsx     # Pagination
-    data-table-view-options.tsx   # Column visibility toggle
-    data-table-row-actions.tsx    # Dropdown: view/edit/delete
-    add-<feature>-modal.tsx       # Create dialog
-    stat-cards.tsx                 # Optional stat cards
+    data-table.tsx                         # Tanstack Table wrapper
+    columns.tsx, data-table-column-header.tsx
+    data-table-toolbar.tsx                 # Search, filter selects, add button
+    data-table-faceted-filter.tsx          # Command-palette filter
+    data-table-pagination.tsx
+    data-table-view-options.tsx            # Column visibility toggle
+    data-table-row-actions.tsx             # Dropdown: view/edit/delete
+    add-<feature>-modal.tsx                # Create dialog
+    stat-cards.tsx                         # Optional stat cards
 ```
 
-<!-- markdownlint-enable MD040 -->
-
-Các modules hiện có: **tasks** (đầy đủ nhất), **users** (react-hook-form + zod), **chat** (Zustand store), **calendar** (date normalization), **dashboard/dashboard-2/dashboard-3**, **settings**.
+Các modules hiện có: **tasks** (đầy đủ nhất), **users** (react-hook-form + zod), **chat** (Zustand store), **calendar** (date normalization), **dashboard-1**, **dashboard-2**, **settings**.
 
 ## Quy ước quan trọng
 
-### API Routes
+### Route groups & auth
 
-API routes không yêu cầu xác thực (public APIs) cần tuân thủ:
+- Có **3 route group**: `(auth)` (public, không sidebar), `(private)` (yêu cầu đăng nhập, có sidebar), `landing` (public).
+- **KHÔNG dùng `(dashboard)`** — codebase dùng `(private)`. `proxy.ts` chạy ở edge check NextAuth session.
+- API routes (`/api/*`) bypass auth trong proxy — public APIs chịu trách nhiệm tự bảo vệ (xem mục API Routes).
 
-**CORS Headers**: Khai báo và dùng cho mọi response:
+### API Routes (public/CORS)
+
+API routes công khai (vd. form submit) phải tuân thủ:
+
+**CORS Headers** khai báo một lần trong file:
 
 ```typescript
 const CORS_HEADERS = {
@@ -118,7 +135,7 @@ const CORS_HEADERS = {
 }
 ```
 
-**OPTIONS handler**: Thêm cho mọi route để hỗ trợ preflight:
+**OPTIONS handler** cho mọi route để hỗ trợ preflight:
 
 ```typescript
 export async function OPTIONS() {
@@ -126,123 +143,76 @@ export async function OPTIONS() {
 }
 ```
 
-**Response pattern**: Luôn truyền `CORS_HEADERS` vào mọi `NextResponse.json()` và status code phù hợp:
-
-- **201** — Thành công (tạo mới)
-- **200** — Thành công (đọc/cập nhật)
-- **400** — Dữ liệu không hợp lệ
-- **500** — Lỗi server
-
-**Response body**: Luôn có `success` (boolean) và `message` (string). Dùng `errors` (object) cho validation errors.
+**Response pattern** — luôn truyền `CORS_HEADERS`, status code chuẩn (`201` create, `200` read/update, `400` invalid, `500` server), body có `success` (boolean) + `message` (string) + `errors` (object, optional).
 
 ```typescript
-// Thành công
-return NextResponse.json({ success: true, message: "..." }, { status: 201, headers: CORS_HEADERS })
-
-// Thất bại
-return NextResponse.json({ success: false, message: "..." }, { status: 500, headers: CORS_HEADERS })
+const parsed = CustomerFormSchema.safeParse(body)
+if (!parsed.success) {
+  return NextResponse.json(
+    { success: false, message: "Dữ liệu không hợp lệ", errors: parsed.error.flatten().fieldErrors },
+    { status: 400, headers: CORS_HEADERS }
+  )
+}
+// … success → status: 201, headers: CORS_HEADERS
 ```
 
-**Middleware tổng quát cho CORS**: Với Next.js 16, có thể khai báo CORS headers trong `next.config.ts` hoặc dùng edge middleware. Tuy nhiên vẫn cần OPTIONS handler riêng cho mỗi route group.
+### Firebase Firestore (client-side)
 
-**Ví dụ hoàn chỉnh**:
+- **Collection naming**: số nhiều, snake_case (`tasks`, `users`, `conversations`, `messages`).
+- **Mock data fallback**: luôn truyền mock array làm fallback — service dùng `getFirestoreCollection(name, fallback)`. Hàm này thử Firestore, nếu empty/lỗi thì trả `fallback`.
+- **No real-time**: **KHÔNG dùng** `onSnapshot`.
+- **CRUD pattern**: KHÔNG viết direct Firestore CRUD trong service — xử lý trên local state (callback pattern ở component).
+- **Timestamps**: `serverTimestamp()` khi seed dữ liệu mock.
+- **Client vs Admin**: components/pages chỉ dùng `client.ts`. Admin SDK ở `lib/firebase/admin.ts` chỉ dành cho server-side scripts.
 
-```typescript
-const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
-}
+### Firebase Admin SDK (`src/lib/firebase/admin.ts`)
 
-export async function OPTIONS() {
-  return new NextResponse(null, { status: 204, headers: CORS_HEADERS })
-}
+Lazy-initialized singleton, export `getAdminApp`, `getAdminAuth`, `getAdminDb`. Đọc env theo thứ tự ưu tiên:
 
-export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json()
-    const parsed = CustomerFormSchema.safeParse(body)
-
-    if (!parsed.success) {
-      return NextResponse.json(
-        { success: false, message: "Dữ liệu không hợp lệ", errors: parsed.error.flatten().fieldErrors },
-        { status: 400, headers: CORS_HEADERS }
-      )
-    }
-
-    const { fullName, email, phoneNumber, serviceName } = parsed.data
-
-    await addDoc(collection(db, "customers"), {
-      fullName, email, phoneNumber, serviceName,
-      createdAt: serverTimestamp(),
-    })
-
-    return NextResponse.json(
-      { success: true, message: "Gửi thông tin thành công!" },
-      { status: 201, headers: CORS_HEADERS }
-    )
-  } catch (error) {
-    console.error("[API Error]", error)
-    return NextResponse.json(
-      { success: false, message: "Đã xảy ra lỗi. Vui lòng thử lại." },
-      { status: 500, headers: CORS_HEADERS }
-    )
-  }
-}
-```
-
-## Quy ước quan trọng
-
-### Firebase Firestore
-
-- **Collection naming**: số nhiều, snake_case (`tasks`, `users`, `conversations`, `messages`)
-- **Mock data fallback**: luôn truyền mock data làm fallback — service dùng `getFirestoreCollection`
-- **No real-time**: KHÔNG dùng `onSnapshot`
-- **CRUD pattern**: KHÔNG viết direct Firestore CRUD ở service — xử lý trên local state (callback pattern)
-- **Timestamps**: dùng `serverTimestamp()` khi seed
-- **Client vs Admin**: components/pages chỉ dùng `client.ts`
+1. Split vars: `FIREBASE_ADMIN_PROJECT_ID` + `FIREBASE_ADMIN_CLIENT_EMAIL` + `FIREBASE_ADMIN_PRIVATE_KEY` (escape `\n` trong key).
+2. JSON blob: `FIREBASE_SERVICE_ACCOUNT_KEY` chứa toàn bộ service account.
+3. Application Default Credentials (ADC) — cho Cloud Run/Functions.
 
 ### Page types
 
-- **Server pages** (async): gọi service trực tiếp, `await` data, truyền vào components. Ví dụ: `dashboard`, `calendar`
-- **Client pages** (`"use client"`): khởi tạo state với mock data, fetch Firestore trong `useEffect`, quản lý state cục bộ. Ví dụ: `tasks`, `users`, `chat`
+- **Server pages** (async): gọi service trực tiếp, `await` data, truyền vào components. VD: `dashboard`, `calendar`.
+- **Client pages** (`"use client"`): khởi tạo state với mock data, fetch Firestore trong `useEffect`, quản lý state cục bộ. VD: `tasks`, `users`, `chat`.
+
+### Auth flow
+
+- Firebase Client Auth xử lý luồng đăng nhập/đăng ký ở frontend.
+- NextAuth `CredentialsProvider` xác thực Firebase ID Token phía server qua Firebase REST `/accounts:lookup` (không dùng firebase-admin cho login flow).
+- `src/proxy.ts` bảo vệ route trong Next.js 16 bằng cách check NextAuth session cookie. Auth page (`/sign-in`, `/sign-up`, `/forgot-password`) + `/landing` được allow khi logged-out.
+- NextAuth config split: `auth.config.ts` (edge-compatible, không import firebase) + `auth.ts` (node, có providers).
 
 ### Form validation
 
-Dùng `react-hook-form` + `@hookform/resolvers/zod`. Định nghĩa schema với zod, dùng `zodResolver` trong `useForm`.
+Dùng `react-hook-form` + `@hookform/resolvers/zod`. Định nghĩa schema với zod, dùng `zodResolver` trong `useForm`. Error messages tiếng Việt ở `src/lib/firebase/auth.ts`.
 
-### cn() utility
+### Other conventions
 
-Luôn dùng `cn()` từ `@/lib/utils` để merge Tailwind classes — KHÔNG dùng template literals cho conditional classes.
-
-### Path alias
-
-`@/*` map tới `./src/*` (cấu hình trong `tsconfig.json`).
-
-## Firebase Integration
-
-### getFirestoreCollection (src/lib/firebase/firestore-query.ts)
-
-```typescript
-// Thử Firestore trước, fallback sang mock data nếu empty hoặc lỗi
-const data = await getFirestoreCollection<TaskItem>("tasks", TaskMockData)
-```
-
-### Auth (src/lib/firebase/auth.ts & src/auth.ts)
-
-- Firebase Client Auth xử lý các luồng đăng nhập/đăng ký tại frontend.
-- NextAuth `CredentialsProvider` đóng vai trò là ranh giới quản lý phiên (session boundary), xác thực Firebase ID Token phía máy chủ bằng Firebase REST API (`/accounts:lookup`) thay vì firebase-admin.
-- `src/proxy.ts` thực hiện bảo vệ định tuyến (route protection) trong Next.js 16 bằng cách kiểm tra Session cookie của NextAuth.
+- **cn() utility**: luôn dùng `cn()` từ `@/lib/utils` để merge Tailwind classes — KHÔNG dùng template literals cho conditional classes.
+- **Path alias**: `@/*` → `./src/*` (`tsconfig.json`).
+- **Functional components + hooks** — không dùng React class components.
+- **Server components ưu tiên**, chỉ `"use client"` khi cần interaction/state.
+- Dynamic import trong `src/components/dynamic-imports.ts` cho thư viện nặng.
+- Recharts cho charts, tanstack/react-table cho tables, sonner cho toasts, date-fns cho date.
 
 ## Environment Variables
 
-**Client Firebase** (Next.js client-side, ký tự `NEXT_PUBLIC_`):
-`NEXT_PUBLIC_FIREBASE_API_KEY`, `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`, `NEXT_PUBLIC_FIREBASE_PROJECT_ID`, `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`, `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`, `NEXT_PUBLIC_FIREBASE_APP_ID`, `NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID`
+Xem `.env.example` đầy đủ. Nhóm chính:
 
-**Server (NextAuth)** (server-only, không `NEXT_PUBLIC_`):
-`AUTH_SECRET`
+**Client Firebase** (Next.js client-side, prefix `NEXT_PUBLIC_`):
+`NEXT_PUBLIC_FIREBASE_API_KEY`, `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`, `NEXT_PUBLIC_FIREBASE_PROJECT_ID`, `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`, `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`, `NEXT_PUBLIC_FIREBASE_APP_ID`, `NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID`.
 
-Xem `.env.example` để biết đầy đủ template.
+`client.ts` validate các biến bắt buộc lúc load — thiếu sẽ throw ngay lúc boot.
+
+**Server (NextAuth + Admin)** (server-only):
+
+- `AUTH_SECRET` — NextAuth session secret.
+- `FIREBASE_ADMIN_PROJECT_ID`, `FIREBASE_ADMIN_CLIENT_EMAIL`, `FIREBASE_ADMIN_PRIVATE_KEY` — Admin SDK split form (private key phải giữ `\n` escape).
+- `FIREBASE_SERVICE_ACCOUNT_KEY` — full JSON blob (fallback).
+- `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` — cho notification integrations.
 
 ## Thêm feature mới
 
@@ -255,22 +225,13 @@ Khi thêm feature mới, tham khảo skill **`nextjs-firebase-feature`** tại `
 5. Tạo data table (Tanstack Table)
 6. Tạo add modal
 7. Tạo stat cards (optional)
-8. Tạo page ghép mọi thứ lại
+8. Tạo page ghép mọi thứ lại (route đặt trong `src/app/(private)/<feature>/`)
 9. Chạy `npx tsc --noEmit` kiểm tra TypeScript
 10. Chạy `npm run dev` xác nhận hoạt động
 
-## Conventions
-
-- Functional components + hooks — không dùng React class components
-- Server components ưu tiên, chỉ dùng `"use client"` khi cần interaction hoặc state
-- Các thư viện UI được dynamic import trong `src/components/dynamic-imports.ts`
-- Recharts dùng cho charts, tanstack/react-table cho tables
-- Toast notifications dùng `sonner`
-- Date handling với `date-fns`
-
 ## Lưu ý khi làm việc
 
-- Không reveal internal Firestore config hoặc private keys
-- Firebase error messages tiếng Việt trong `auth.ts`
-- Mock data seeder là server action, dùng `client.ts` không cần Admin SDK
-- Nếu thêm feature mới: đọc SKILL.md trước khi code
+- Không commit internal Firestore config hoặc private keys.
+- Error messages Firebase tiếng Việt đặt trong `auth.ts`.
+- Mock data seeder chạy phía server, dùng `client.ts` (không cần Admin SDK) cho flow chính.
+- Nếu thêm feature mới: đọc `SKILL.md` trước khi code.

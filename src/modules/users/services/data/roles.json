@@ -7,16 +7,16 @@
     "updatedAt": "2024-01-01T00:00:00Z"
   },
   {
-    "id": "role-editor",
-    "name": "Editor",
-    "description": "Biên tập viên - Có thể chỉnh sửa nội dung",
+    "id": "role-author",
+    "name": "Author",
+    "description": "Tác giả - Có thể tạo nội dung",
     "createdAt": "2024-01-01T00:00:00Z",
     "updatedAt": "2024-01-01T00:00:00Z"
   },
   {
-    "id": "role-author",
-    "name": "Author",
-    "description": "Tác giả - Có thể tạo nội dung",
+    "id": "role-editor",
+    "name": "Editor",
+    "description": "Biên tập viên - Có thể chỉnh sửa nội dung",
     "createdAt": "2024-01-01T00:00:00Z",
     "updatedAt": "2024-01-01T00:00:00Z"
   },

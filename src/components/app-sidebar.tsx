@@ -70,7 +70,7 @@ const data = {
       items: [
         {
           title: "Users & Roles",
-          url: "/users",
+          url: "/admin/users",
           icon: Users,
         },
       ],

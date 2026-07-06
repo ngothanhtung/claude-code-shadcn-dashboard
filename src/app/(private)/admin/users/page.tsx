@@ -31,11 +31,10 @@ import { StatCards } from "@/modules/users/components/stat-cards"
 import { getUserColumns } from "@/modules/users/components/user-columns"
 import { UserDataTable } from "@/modules/users/components/user-data-table"
 import { UserFormDialog } from "@/modules/users/components/user-form-dialog"
-import { getRoles, deleteRole, seedRolesWithClient } from "@/modules/users/services/role-services"
+import { deleteRole, getRoles, seedRolesWithClient } from "@/modules/users/services/role-services"
 import {
   getUserRoles,
   removeAllAssignmentsForRole,
-  seedUserRolesWithClient,
 } from "@/modules/users/services/user-role-services"
 import { deleteUserViaApi, getUsers } from "@/modules/users/services/user-services"
 import type {
@@ -95,17 +94,15 @@ export default function UsersPage() {
     load()
   }, [refreshAll])
 
-  // Seed only roles + role assignments. Auth users can only be created
-  // through the admin API, not by writing Firestore documents.
-  const handleSeed = useCallback(async () => {
+  const handleSeedRoles = useCallback(async () => {
     try {
       setIsSeeding(true)
-      await Promise.all([seedRolesWithClient(), seedUserRolesWithClient()])
+      await seedRolesWithClient()
       await refreshAll()
-      toast.success("Đã seed role và user_roles mẫu")
+      toast.success("Đã seed 5 roles mẫu")
     } catch (error) {
-      console.error("Seed failed:", error)
-      toast.error("Seed thất bại")
+      console.error("Seed roles failed:", error)
+      toast.error("Seed roles thất bại")
     } finally {
       setIsSeeding(false)
     }
@@ -315,19 +312,9 @@ export default function UsersPage() {
                   columns={roleColumns}
                   userRoles={userRoles}
                   onAddRole={handleAddRole}
+                  onSeedRoles={handleSeedRoles}
+                  isSeeding={isSeeding}
                 />
-                <div className="mt-4 flex justify-end">
-                  <button
-                    type="button"
-                    onClick={handleSeed}
-                    disabled={isSeeding}
-                    className="text-xs text-muted-foreground hover:text-foreground underline-offset-2 hover:underline cursor-pointer disabled:opacity-50"
-                  >
-                    {isSeeding
-                      ? "Đang seed..."
-                      : "Seed role + user_roles mẫu (chỉ khi collection trống)"}
-                  </button>
-                </div>
               </CardContent>
             </Card>
           </TabsContent>
