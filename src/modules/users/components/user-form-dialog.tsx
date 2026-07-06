@@ -1,6 +1,9 @@
 "use client"
 
 import { useState } from "react"
+import { Loader2, Plus, Save } from "lucide-react"
+import { toast } from "sonner"
+
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -9,7 +12,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog"
 import {
   Form,
@@ -27,85 +29,217 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Plus } from "lucide-react"
 import { useForm } from "react-hook-form"
-import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
-import type { UserFormValues } from "@/modules/users/services/types/user-types"
 
-const userFormSchema = z.object({
-  name: z.string().min(2, {
-    message: "Name must be at least 2 characters.",
-  }),
-  email: z.string().email({
-    message: "Please enter a valid email address.",
-  }),
-  role: z.string().min(1, {
-    message: "Please select a role.",
-  }),
-  plan: z.string().min(1, {
-    message: "Please select a plan.",
-  }),
-  billing: z.string().min(1, {
-    message: "Please select a billing method.",
-  }),
-  status: z.string().min(1, {
-    message: "Please select a status.",
-  }),
-})
-
-type UserFormSchemaValues = z.infer<typeof userFormSchema>
+import {
+  createUserViaApi,
+  updateUserViaApi,
+} from "../services/user-services"
+import {
+  userFormSchema,
+  type User,
+  type UserFormValues,
+} from "../services/types/user-types"
 
 interface UserFormDialogProps {
-  onAddUser: (user: UserFormValues) => void
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  /** When set, the dialog runs in "edit" mode against this user. */
+  user?: User | null
+  /** Trigger element to open the dialog when in uncontrolled mode. */
+  trigger?: React.ReactNode
+  onSuccess?: (user: User) => void
 }
 
-export function UserFormDialog({ onAddUser }: UserFormDialogProps) {
-  const [open, setOpen] = useState(false)
+const EMPTY_DEFAULTS: UserFormValues = {
+  name: "",
+  email: "",
+  gender: "male",
+  phone: "",
+  status: "active",
+  password: "",
+}
 
-  const form = useForm<UserFormSchemaValues>({
+function defaultsFor(user: User | null | undefined): UserFormValues {
+  if (!user) return { ...EMPTY_DEFAULTS }
+  return {
+    name: user.name ?? "",
+    email: user.email ?? "",
+    gender: user.gender ?? "male",
+    phone: user.phone ?? "",
+    status: user.status ?? "active",
+    password: "",
+  }
+}
+
+export function UserFormDialog({
+  open,
+  onOpenChange,
+  user,
+  trigger,
+  onSuccess,
+}: UserFormDialogProps) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      {trigger}
+      {/*
+        Re-mount the inner form every time the target user changes so the
+        form always starts from a known state (existing user data, or empty
+        for create). This is more reliable than resetting in useEffect.
+      */}
+      <UserFormDialogBody
+        key={user?.uid ?? "__new__"}
+        user={user ?? null}
+        onClose={() => onOpenChange(false)}
+        onSuccess={onSuccess}
+      />
+    </Dialog>
+  )
+}
+
+interface UserFormDialogBodyProps {
+  user: User | null
+  onClose: () => void
+  onSuccess?: (user: User) => void
+}
+
+function UserFormDialogBody({ user, onClose, onSuccess }: UserFormDialogBodyProps) {
+  const isEdit = Boolean(user)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const form = useForm<UserFormValues>({
     resolver: zodResolver(userFormSchema),
-    defaultValues: {
-      name: "",
-      email: "",
-      role: "",
-      plan: "",
-      billing: "",
-      status: "",
-    },
+    defaultValues: defaultsFor(user),
   })
 
-  function onSubmit(data: UserFormSchemaValues) {
-    onAddUser(data)
-    form.reset()
-    setOpen(false)
+  const onSubmit = async (data: UserFormValues) => {
+    setIsSubmitting(true)
+    try {
+      if (isEdit && user) {
+        const result = await updateUserViaApi(user.uid, {
+          name: data.name,
+          gender: data.gender,
+          phone: data.phone,
+          status: data.status,
+          ...(data.password ? { password: data.password } : {}),
+        })
+
+        if (!result.success) {
+          toast.error(result.message ?? "Cập nhật thất bại")
+          if (result.errors) {
+            Object.entries(result.errors).forEach(([field, messages]) => {
+              if (messages?.[0]) {
+                form.setError(field as keyof UserFormValues, {
+                  type: "server",
+                  message: messages[0],
+                })
+              }
+            })
+          }
+          return
+        }
+
+        toast.success(result.message ?? "Đã cập nhật người dùng")
+        onSuccess?.({
+          ...user,
+          name: data.name,
+          gender: data.gender,
+          phone: data.phone ?? "",
+          status: data.status,
+          disabled: data.status === "disabled",
+        })
+        onClose()
+      } else {
+        if (!data.password) {
+          form.setError("password", { message: "Mật khẩu là bắt buộc" })
+          return
+        }
+
+        const result = await createUserViaApi({
+          name: data.name,
+          email: data.email,
+          gender: data.gender,
+          phone: data.phone,
+          status: data.status,
+          password: data.password,
+        })
+
+        if (!result.success) {
+          toast.error(result.message ?? "Tạo thất bại")
+          if (result.errors) {
+            Object.entries(result.errors).forEach(([field, messages]) => {
+              if (messages?.[0]) {
+                form.setError(field as keyof UserFormValues, {
+                  type: "server",
+                  message: messages[0],
+                })
+              }
+            })
+          }
+          return
+        }
+
+        toast.success(result.message ?? "Đã tạo người dùng")
+        onSuccess?.({
+          uid: result.data?.uid ?? "",
+          name: data.name,
+          email: data.email,
+          gender: data.gender,
+          phone: data.phone ?? "",
+          status: data.status,
+          address: user?.address ?? "",
+          disabled: data.status === "disabled",
+          emailVerified: false,
+          photoURL: user?.photoURL ?? null,
+          creationTime: new Date().toISOString(),
+          lastSignInTime: null,
+          providers: ["password"],
+          profileCreatedAt: new Date().toISOString(),
+          profileUpdatedAt: new Date().toISOString(),
+        })
+        onClose()
+      }
+    } catch (error) {
+      console.error(error)
+      toast.error("Đã xảy ra lỗi không mong muốn")
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button className="cursor-pointer">
-          <Plus className="mr-2 h-4 w-4" />
-          Add New User
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>Add New User</DialogTitle>
-          <DialogDescription>
-            Create a new user account. Click save when you&apos;re done.
-          </DialogDescription>
-        </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+    <DialogContent className="sm:max-w-[525px]">
+      <DialogHeader>
+        <DialogTitle>
+          {isEdit ? "Chỉnh sửa người dùng" : "Thêm người dùng mới"}
+        </DialogTitle>
+        <DialogDescription>
+          {isEdit ? (
+            <>
+              Đang chỉnh sửa tài khoản{" "}
+              <span className="font-medium text-foreground">
+                {user?.email}
+              </span>
+              . Email không thể thay đổi.
+            </>
+          ) : (
+            "Tạo tài khoản Firebase Auth mới cùng với profile Firestore."
+          )}
+        </DialogDescription>
+      </DialogHeader>
+
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField
               control={form.control}
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Name</FormLabel>
+                  <FormLabel>Họ và tên *</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter full name" {...field} />
+                    <Input placeholder="Nguyễn Văn A" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -116,117 +250,137 @@ export function UserFormDialog({ onAddUser }: UserFormDialogProps) {
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel>Email *</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter email address" {...field} />
+                    <Input
+                      type="email"
+                      placeholder="email@example.com"
+                      {...field}
+                      disabled={isEdit}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="role"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Role</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger className="cursor-pointer w-full">
-                          <SelectValue placeholder="Select role" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="Admin">Admin</SelectItem>
-                        <SelectItem value="Author">Author</SelectItem>
-                        <SelectItem value="Editor">Editor</SelectItem>
-                        <SelectItem value="Maintainer">Maintainer</SelectItem>
-                        <SelectItem value="Subscriber">Subscriber</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="plan"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Plan</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger className="cursor-pointer w-full">
-                          <SelectValue placeholder="Select plan" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="Basic">Basic</SelectItem>
-                        <SelectItem value="Professional">Professional</SelectItem>
-                        <SelectItem value="Enterprise">Enterprise</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="billing"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Billing</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger className="cursor-pointer w-full">
-                          <SelectValue placeholder="Select billing" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="Auto Debit">Auto Debit</SelectItem>
-                        <SelectItem value="UPI">UPI</SelectItem>
-                        <SelectItem value="Paypal">Paypal</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="status"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Status</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger className="cursor-pointer w-full">
-                          <SelectValue placeholder="Select status" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="Active">Active</SelectItem>
-                        <SelectItem value="Pending">Pending</SelectItem>
-                        <SelectItem value="Error">Error</SelectItem>
-                        <SelectItem value="Inactive">Inactive</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <DialogFooter>
-              <Button type="submit" className="cursor-pointer">
-                Save User
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="phone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Số điện thoại</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="+84 ..."
+                      {...field}
+                      value={field.value ?? ""}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="gender"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Giới tính</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    value={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger className="w-full cursor-pointer">
+                        <SelectValue placeholder="Chọn giới tính" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="male">Nam</SelectItem>
+                      <SelectItem value="female">Nữ</SelectItem>
+                      <SelectItem value="other">Khác</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          <FormField
+            control={form.control}
+            name="status"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Trạng thái</FormLabel>
+                <Select
+                  onValueChange={field.onChange}
+                  value={field.value}
+                >
+                  <FormControl>
+                    <SelectTrigger className="w-full cursor-pointer">
+                      <SelectValue placeholder="Chọn trạng thái" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="disabled">Disabled</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="password"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>
+                  {isEdit
+                    ? "Mật khẩu mới (để trống nếu không đổi)"
+                    : "Mật khẩu *"}
+                </FormLabel>
+                <FormControl>
+                  <Input type="password" placeholder="••••••" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <DialogFooter className="gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              className="cursor-pointer"
+              disabled={isSubmitting}
+            >
+              Hủy
+            </Button>
+            <Button
+              type="submit"
+              className="cursor-pointer"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : isEdit ? (
+                <Save className="mr-2 h-4 w-4" />
+              ) : (
+                <Plus className="mr-2 h-4 w-4" />
+              )}
+              {isEdit ? "Lưu thay đổi" : "Tạo người dùng"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </Form>
+    </DialogContent>
   )
 }
