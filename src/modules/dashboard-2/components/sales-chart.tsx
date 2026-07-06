@@ -6,21 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
-
-const salesData = [
-  { month: "Jan", sales: 12500, target: 15000 },
-  { month: "Feb", sales: 18200, target: 15000 },
-  { month: "Mar", sales: 16800, target: 15000 },
-  { month: "Apr", sales: 22400, target: 20000 },
-  { month: "May", sales: 24600, target: 20000 },
-  { month: "Jun", sales: 28200, target: 25000 },
-  { month: "Jul", sales: 31500, target: 25000 },
-  { month: "Aug", sales: 29800, target: 25000 },
-  { month: "Sep", sales: 33200, target: 30000 },
-  { month: "Oct", sales: 35100, target: 30000 },
-  { month: "Nov", sales: 38900, target: 35000 },
-  { month: "Dec", sales: 42300, target: 35000 },
-]
+import type { SalesDataPoint } from "@/modules/dashboard-2/services/types/dashboard-2-types"
 
 const chartConfig = {
   sales: {
@@ -33,7 +19,11 @@ const chartConfig = {
   },
 }
 
-export function SalesChart() {
+interface SalesChartProps {
+  salesData: SalesDataPoint[]
+}
+
+export function SalesChart({ salesData }: SalesChartProps) {
   const [timeRange, setTimeRange] = useState("12m")
 
   return (
@@ -74,14 +64,14 @@ export function SalesChart() {
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted/30" />
-              <XAxis 
-                dataKey="month" 
+              <XAxis
+                dataKey="month"
                 axisLine={false}
                 tickLine={false}
                 className="text-xs"
                 tick={{ fontSize: 12 }}
               />
-              <YAxis 
+              <YAxis
                 axisLine={false}
                 tickLine={false}
                 className="text-xs"

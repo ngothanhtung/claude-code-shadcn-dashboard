@@ -7,16 +7,13 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import { Users, MapPin, TrendingUp, Target, ArrowUpIcon, UserIcon } from "lucide-react"
-
-const customerGrowthData = [
-  { month: "Jan", new: 245, returning: 890, churn: 45 },
-  { month: "Feb", new: 312, returning: 934, churn: 52 },
-  { month: "Mar", new: 289, returning: 1023, churn: 38 },
-  { month: "Apr", new: 456, returning: 1156, churn: 61 },
-  { month: "May", new: 523, returning: 1298, churn: 47 },
-  { month: "Jun", new: 634, returning: 1445, churn: 55 },
-]
+import { Users, MapPin, TrendingUp, Target, ArrowUpIcon, UserIcon, ArrowDownIcon } from "lucide-react"
+import type {
+  CustomerGrowthPoint,
+  DemographicRow,
+  RegionRow,
+  CustomerInsightMetric,
+} from "@/modules/dashboard-2/services/types/dashboard-2-types"
 
 const chartConfig = {
   new: {
@@ -33,23 +30,19 @@ const chartConfig = {
   },
 }
 
-const demographicsData = [
-  { ageGroup: "18-24", customers: 2847, percentage: "18.0%", growth: "+15.2%", growthColor: "text-green-600" },
-  { ageGroup: "25-34", customers: 4521, percentage: "28.5%", growth: "+8.7%", growthColor: "text-green-600" },
-  { ageGroup: "35-44", customers: 3982, percentage: "25.1%", growth: "+3.4%", growthColor: "text-blue-600" },
-  { ageGroup: "45-54", customers: 2734, percentage: "17.2%", growth: "+1.2%", growthColor: "text-orange-600" },
-  { ageGroup: "55+", customers: 1763, percentage: "11.2%", growth: "-2.1%", growthColor: "text-red-600" },
-]
+interface CustomerInsightsProps {
+  customerGrowth: CustomerGrowthPoint[]
+  demographics: DemographicRow[]
+  regions: RegionRow[]
+  metrics: CustomerInsightMetric[]
+}
 
-const regionsData = [
-  { region: "North America", customers: 6847, revenue: "$847,523", growth: "+12.3%", growthColor: "text-green-600" },
-  { region: "Europe", customers: 4521, revenue: "$563,891", growth: "+9.7%", growthColor: "text-green-600" },
-  { region: "Asia Pacific", customers: 2892, revenue: "$321,456", growth: "+18.4%", growthColor: "text-blue-600" },
-  { region: "Latin America", customers: 1123, revenue: "$187,234", growth: "+15.8%", growthColor: "text-green-600" },
-  { region: "Others", customers: 464, revenue: "$67,891", growth: "+5.2%", growthColor: "text-orange-600" },
-]
-
-export function CustomerInsights() {
+export function CustomerInsights({
+  customerGrowth,
+  demographics,
+  regions,
+  metrics,
+}: CustomerInsightsProps) {
   const [activeTab, setActiveTab] = useState("growth")
 
   return (
@@ -92,7 +85,7 @@ export function CustomerInsights() {
                 <div className="col-span-10 xl:col-span-7">
                   <h3 className="text-sm font-medium text-muted-foreground mb-6">Customer Growth Trends</h3>
                   <ChartContainer config={chartConfig} className="h-[375px] w-full">
-                    <BarChart data={customerGrowthData} margin={{ top: 20, right: 20, bottom: 20, left: 0 }}>
+                    <BarChart data={customerGrowth} margin={{ top: 20, right: 20, bottom: 20, left: 0 }}>
                       <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                       <XAxis
                         dataKey="month"
@@ -120,41 +113,30 @@ export function CustomerInsights() {
                 <div className="col-span-10 xl:col-span-3 space-y-5">
                   <h3 className="text-sm font-medium text-muted-foreground mb-6">Key Metrics</h3>
                   <div className="grid grid-cols-3 gap-5">
-                    <div className="p-4 rounded-lg max-lg:col-span-3 xl:col-span-3 border">
-                      <div className="flex items-center gap-2 mb-2">
-                        <TrendingUp className="h-4 w-4 text-primary" />
-                        <span className="text-sm font-medium">Total Customers</span>
-                      </div>
-                      <div className="text-2xl font-bold">15,847</div>
-                      <div className="text-xs text-green-600 flex items-center gap-1 mt-1">
-                        <ArrowUpIcon className="h-3 w-3" />
-                        +12.5% from last month
-                      </div>
-                    </div>
+                    {metrics.map((metric) => {
+                      const TrendIcon = metric.trendDirection === "up" ? ArrowUpIcon : ArrowDownIcon
+                      const icon =
+                        metric.label === "Total Customers" ? TrendingUp :
+                        metric.label === "Retention Rate" ? Users :
+                        Target
 
-                    <div className="p-4 rounded-lg max-lg:col-span-3 xl:col-span-3 border">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Users className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm font-medium">Retention Rate</span>
-                      </div>
-                      <div className="text-2xl font-bold">92.4%</div>
-                      <div className="text-xs text-green-600 flex items-center gap-1 mt-1">
-                        <ArrowUpIcon className="h-3 w-3" />
-                        +2.1% improvement
-                      </div>
-                    </div>
-
-                    <div className="p-4 rounded-lg max-lg:col-span-3 xl:col-span-3 border">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Target className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm font-medium">Avg. LTV</span>
-                      </div>
-                      <div className="text-2xl font-bold">$2,847</div>
-                      <div className="text-xs text-green-600 flex items-center gap-1 mt-1">
-                        <ArrowUpIcon className="h-3 w-3" />
-                        +8.3% growth
-                      </div>
-                    </div>
+                      return (
+                        <div key={metric.label} className="p-4 rounded-lg max-lg:col-span-3 xl:col-span-3 border">
+                          <div className="flex items-center gap-2 mb-2">
+                            {(() => {
+                              const Icon = icon
+                              return <Icon className="h-4 w-4 text-muted-foreground" />
+                            })()}
+                            <span className="text-sm font-medium">{metric.label}</span>
+                          </div>
+                          <div className="text-2xl font-bold">{metric.value}</div>
+                          <div className="text-xs text-green-600 flex items-center gap-1 mt-1">
+                            <TrendIcon className="h-3 w-3" />
+                            {metric.trend}
+                          </div>
+                        </div>
+                      )
+                    })}
                   </div>
                 </div>
               </div>
@@ -173,7 +155,7 @@ export function CustomerInsights() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {demographicsData.map((row, index) => (
+                  {demographics.map((row, index) => (
                     <TableRow key={index} className="hover:bg-muted/30 transition-colors">
                       <TableCell className="font-medium py-5 px-6">{row.ageGroup}</TableCell>
                       <TableCell className="text-right py-5 px-6">{row.customers.toLocaleString()}</TableCell>
@@ -188,7 +170,7 @@ export function CustomerInsights() {
             </div>
             <div className="flex items-center justify-end space-x-2 py-6">
               <div className="text-muted-foreground text-sm hidden sm:block">
-                0 of {demographicsData.length} row(s) selected.
+                0 of {demographics.length} row(s) selected.
               </div>
               <div className="space-x-2 space-y-2">
                 <Button variant="outline" size="sm" disabled>
@@ -214,7 +196,7 @@ export function CustomerInsights() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {regionsData.map((row, index) => (
+                  {regions.map((row, index) => (
                     <TableRow key={index} className="hover:bg-muted/30 transition-colors">
                       <TableCell className="font-medium py-5 px-6">{row.region}</TableCell>
                       <TableCell className="text-right py-5 px-6">{row.customers.toLocaleString()}</TableCell>
@@ -229,7 +211,7 @@ export function CustomerInsights() {
             </div>
             <div className="flex items-center justify-end space-x-2 py-6">
               <div className="text-muted-foreground text-sm hidden sm:block">
-                0 of {regionsData.length} row(s) selected.
+                0 of {regions.length} row(s) selected.
               </div>
               <div className="space-x-2 space-y-2">
                 <Button variant="outline" size="sm" disabled>

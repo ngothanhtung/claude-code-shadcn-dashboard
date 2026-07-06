@@ -7,13 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ChartContainer, ChartStyle, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
-
-const revenueData = [
-  { category: "subscriptions", value: 45, amount: 24500, fill: "var(--color-subscriptions)" },
-  { category: "sales", value: 30, amount: 16300, fill: "var(--color-sales)" },
-  { category: "services", value: 15, amount: 8150, fill: "var(--color-services)" },
-  { category: "partnerships", value: 10, amount: 5430, fill: "var(--color-partnerships)" },
-]
+import type { RevenueBreakdownItem } from "@/modules/dashboard-2/services/types/dashboard-2-types"
 
 const chartConfig = {
   revenue: {
@@ -40,16 +34,28 @@ const chartConfig = {
   },
 }
 
-export function RevenueBreakdown() {
+interface RevenueBreakdownProps {
+  revenueBreakdown: RevenueBreakdownItem[]
+}
+
+export function RevenueBreakdown({ revenueBreakdown }: RevenueBreakdownProps) {
   const id = "revenue-breakdown"
-  const [activeCategory, setActiveCategory] = React.useState("sales")
+  const [activeCategory, setActiveCategory] = React.useState<RevenueBreakdownItem["category"]>("sales")
 
   const activeIndex = React.useMemo(() => {
-    const index = revenueData.findIndex((item) => item.category === activeCategory)
+    const index = revenueBreakdown.findIndex((item) => item.category === activeCategory)
     return index === -1 ? 0 : index
-  }, [activeCategory])
+  }, [activeCategory, revenueBreakdown])
 
-  const categories = React.useMemo(() => revenueData.map((item) => item.category), [])
+  const categories = React.useMemo(
+    () => revenueBreakdown.map((item) => item.category),
+    [revenueBreakdown]
+  )
+
+  const pieData = revenueBreakdown.map((item) => ({
+    ...item,
+    fill: `var(--color-${item.category})`,
+  }))
 
   return (
     <Card data-chart={id} className="flex flex-col cursor-pointer">
@@ -60,7 +66,10 @@ export function RevenueBreakdown() {
           <CardDescription>Revenue distribution by source</CardDescription>
         </div>
         <div className="flex items-center space-x-2">
-          <Select value={activeCategory} onValueChange={setActiveCategory}>
+          <Select
+            value={activeCategory}
+            onValueChange={(v) => setActiveCategory(v as RevenueBreakdownItem["category"])}
+          >
             <SelectTrigger
               className="w-[175px] rounded-lg cursor-pointer"
               aria-label="Select a category"
@@ -114,7 +123,7 @@ export function RevenueBreakdown() {
                   content={<ChartTooltipContent hideLabel />}
                 />
                 <Pie
-                  data={revenueData}
+                  data={pieData}
                   dataKey="amount"
                   nameKey="category"
                   innerRadius={60}
@@ -148,7 +157,7 @@ export function RevenueBreakdown() {
                               y={viewBox.cy}
                               className="fill-foreground text-3xl font-bold"
                             >
-                              ${(revenueData[activeIndex].amount / 1000).toFixed(0)}K
+                              ${(revenueBreakdown[activeIndex].amount / 1000).toFixed(0)}K
                             </tspan>
                             <tspan
                               x={viewBox.cx}
@@ -168,7 +177,7 @@ export function RevenueBreakdown() {
           </div>
 
           <div className="flex flex-col justify-center space-y-4">
-            {revenueData.map((item, index) => {
+            {revenueBreakdown.map((item, index) => {
               const config = chartConfig[item.category as keyof typeof chartConfig]
               const isActive = index === activeIndex
 
@@ -187,7 +196,7 @@ export function RevenueBreakdown() {
                         backgroundColor: `var(--color-${item.category})`,
                       }}
                     />
-                    <span className="font-medium">{config?.label}</span>
+                    <span className="font-medium">{item.label}</span>
                   </div>
                   <div className="text-right">
                     <div className="font-bold">${(item.amount / 1000).toFixed(1)}K</div>
