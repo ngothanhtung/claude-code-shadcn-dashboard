@@ -6,14 +6,11 @@ import {
   LayoutPanelLeft,
   LayoutDashboard,
   Megaphone,
-  Mail,
   CheckSquare,
   MessageCircle,
   Calendar,
   Shield,
   AlertTriangle,
-  HelpCircle,
-  CreditCard,
   Users,
 } from "lucide-react"
 import Link from "next/link"
@@ -49,13 +46,8 @@ const data = {
       ],
     },
     {
-      label: "Apps",
+      label: "Applications",
       items: [
-        {
-          title: "Mail",
-          url: "/mail",
-          icon: Mail,
-        },
         {
           title: "Tasks",
           url: "/tasks",
@@ -71,8 +63,13 @@ const data = {
           url: "/calendar",
           icon: Calendar,
         },
+      ],
+    },
+    {
+      label: "Administration",
+      items: [
         {
-          title: "Users",
+          title: "Users & Roles",
           url: "/users",
           icon: Users,
         },
@@ -126,16 +123,6 @@ const data = {
               url: "/errors/under-maintenance",
             },
           ],
-        },
-        {
-          title: "FAQs",
-          url: "/faqs",
-          icon: HelpCircle,
-        },
-        {
-          title: "Pricing",
-          url: "/pricing",
-          icon: CreditCard,
         },
       ],
     },

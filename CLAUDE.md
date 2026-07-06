@@ -38,8 +38,7 @@ src/
     api/auth/[...nextauth]/     # NextAuth API route handlers (GET/POST)
     (dashboard)/                # Route group: có sidebar
       dashboard/, dashboard-2/, dashboard-3/
-      tasks/, users/, chat/, mail/, calendar/
-      faqs/, pricing/
+      tasks/, users/, chat/, calendar/
       mock-data/                # Firestore seed UI
       settings/                 # user, account, billing, appearance, notifications, connections
     landing/                    # Public landing page
@@ -51,9 +50,9 @@ src/
     auth-provider.tsx           # NextAuth SessionProvider wrapper
     theme-customizer/           # Panel tùy chỉnh theme/layout
   modules/                      # Feature modules — xem mục "Module Pattern" bên dưới
-    tasks/, users/, chat/, mail/, calendar/
+    tasks/, users/, chat/, calendar/
     dashboard/, dashboard-2/, dashboard-3/
-    faqs/, pricing/, settings/
+    settings/
   lib/
     firebase/
       client.ts                 # Firebase client (app, auth, db, storage)
@@ -101,7 +100,7 @@ src/modules/<feature>/
 
 <!-- markdownlint-enable MD040 -->
 
-Các modules hiện có: **tasks** (đầy đủ nhất), **users** (react-hook-form + zod), **chat** (Zustand store), **mail** (3-panel layout), **calendar** (date normalization), **dashboard/dashboard-2/dashboard-3**, **faqs**, **pricing**, **settings**.
+Các modules hiện có: **tasks** (đầy đủ nhất), **users** (react-hook-form + zod), **chat** (Zustand store), **calendar** (date normalization), **dashboard/dashboard-2/dashboard-3**, **settings**.
 
 ## Quy ước quan trọng
 
@@ -205,7 +204,7 @@ export async function POST(request: NextRequest) {
 
 ### Page types
 
-- **Server pages** (async): gọi service trực tiếp, `await` data, truyền vào components. Ví dụ: `dashboard`, `calendar`, `mail`, `faqs`, `pricing`
+- **Server pages** (async): gọi service trực tiếp, `await` data, truyền vào components. Ví dụ: `dashboard`, `calendar`
 - **Client pages** (`"use client"`): khởi tạo state với mock data, fetch Firestore trong `useEffect`, quản lý state cục bộ. Ví dụ: `tasks`, `users`, `chat`
 
 ### Form validation

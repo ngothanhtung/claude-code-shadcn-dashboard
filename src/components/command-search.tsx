@@ -8,14 +8,11 @@ import {
   LayoutPanelLeft,
   LayoutDashboard,
   Megaphone,
-  Mail,
   CheckSquare,
   MessageCircle,
   Calendar,
   Shield,
   AlertTriangle,
-  HelpCircle,
-  CreditCard,
   type LucideIcon,
 } from "lucide-react"
 
@@ -129,7 +126,6 @@ export function CommandSearch({ open, onOpenChange }: CommandSearchProps) {
     { title: "Dashboard 3", url: "/dashboard-3", group: "Dashboards", icon: Megaphone },
 
     // Apps
-    { title: "Mail", url: "/mail", group: "Apps", icon: Mail },
     { title: "Tasks", url: "/tasks", group: "Apps", icon: CheckSquare },
     { title: "Chat", url: "/chat", group: "Apps", icon: MessageCircle },
     { title: "Calendar", url: "/calendar", group: "Apps", icon: Calendar },
@@ -147,8 +143,6 @@ export function CommandSearch({ open, onOpenChange }: CommandSearchProps) {
 
 
     // Pages
-    { title: "FAQs", url: "/faqs", group: "Pages", icon: HelpCircle },
-    { title: "Pricing", url: "/pricing", group: "Pages", icon: CreditCard },
   ]
 
   const groupedItems = searchItems.reduce((acc, item) => {
