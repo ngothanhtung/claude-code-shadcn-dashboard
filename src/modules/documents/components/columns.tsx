@@ -32,6 +32,7 @@ export function getDocumentColumns({
   return [
     {
       id: "select",
+
       header: ({ table }) => (
         <Checkbox
           checked={
@@ -66,7 +67,7 @@ export function getDocumentColumns({
         </div>
       ),
       enableHiding: false,
-      enableResizing: false,
+      enableResizing: true,
     },
     {
       accessorKey: "name",
@@ -99,10 +100,8 @@ export function getDocumentColumns({
         }
 
         const statusColors: Record<string, string> = {
-          draft:
-            "border-yellow-500 text-yellow-700 dark:text-yellow-400",
-          published:
-            "border-green-500 text-green-700 dark:text-green-400",
+          draft: "border-yellow-500 text-yellow-700 dark:text-yellow-400",
+          published: "border-green-500 text-green-700 dark:text-green-400",
         }
 
         return (

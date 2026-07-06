@@ -118,7 +118,7 @@ export function AddDocumentModal({
       if (!nextOpen) resetState()
       setOpen(nextOpen)
     },
-    [isSubmitting, isUploading, resetState],
+    [isSubmitting, isUploading, resetState]
   )
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -210,7 +210,7 @@ export function AddDocumentModal({
         addFiles(e.dataTransfer.files)
       }
     },
-    [addFiles],
+    [addFiles]
   )
 
   const handleUpload = useCallback(async () => {
@@ -226,7 +226,7 @@ export function AddDocumentModal({
           return { ...entry, state: "error" as const, error: err }
         }
         return entry
-      }),
+      })
     )
 
     if (validationErrors.length > 0) {
@@ -239,7 +239,7 @@ export function AddDocumentModal({
     setIsUploading(true)
     try {
       setFileEntries((prev) =>
-        prev.map((e) => ({ ...e, state: "uploading" as const })),
+        prev.map((e) => ({ ...e, state: "uploading" as const }))
       )
 
       await uploadFilesToDocument(
@@ -248,14 +248,14 @@ export function AddDocumentModal({
         (fileName, pct) => {
           setFileEntries((prev) =>
             prev.map((e) =>
-              e.file.name === fileName ? { ...e, progress: pct } : e,
-            ),
+              e.file.name === fileName ? { ...e, progress: pct } : e
+            )
           )
-        },
+        }
       )
 
       setFileEntries((prev) =>
-        prev.map((e) => ({ ...e, state: "success" as const, progress: 100 })),
+        prev.map((e) => ({ ...e, state: "success" as const, progress: 100 }))
       )
 
       const uploadedCount = fileEntries.length
@@ -273,8 +273,8 @@ export function AddDocumentModal({
         prev.map((e) =>
           e.state === "uploading"
             ? { ...e, state: "error" as const, error: "Lỗi upload" }
-            : e,
-        ),
+            : e
+        )
       )
       toast.error("Lỗi khi upload file", {
         description:
@@ -290,9 +290,7 @@ export function AddDocumentModal({
     setOpen(false)
   }, [resetState])
 
-  const pendingCount = fileEntries.filter(
-    (e) => e.state === "pending",
-  ).length
+  const pendingCount = fileEntries.filter((e) => e.state === "pending").length
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -363,7 +361,10 @@ export function AddDocumentModal({
               {fileEntries.length > 0 ? (
                 <AttachmentGroup className="max-h-[200px] flex-col overflow-y-auto">
                   {fileEntries.map((entry, idx) => {
-                    const stateMap: Record<FileEntry["state"], "idle" | "uploading" | "error" | "done"> = {
+                    const stateMap: Record<
+                      FileEntry["state"],
+                      "idle" | "uploading" | "error" | "done"
+                    > = {
                       pending: "idle",
                       uploading: "uploading",
                       error: "error",
@@ -385,12 +386,17 @@ export function AddDocumentModal({
                             {formatFileSize(entry.file.size)}
                             {entry.state === "error"
                               ? ` — ${entry.error}`
-                              : entry.state === "uploading" || entry.state === "success"
+                              : entry.state === "uploading" ||
+                                  entry.state === "success"
                                 ? ` · ${entry.progress}%`
                                 : ""}
                           </AttachmentDescription>
-                          {entry.state === "uploading" || entry.state === "success" ? (
-                            <Progress className="mt-1 h-1.5" value={entry.progress} />
+                          {entry.state === "uploading" ||
+                          entry.state === "success" ? (
+                            <Progress
+                              className="mt-1 h-1.5"
+                              value={entry.progress}
+                            />
                           ) : null}
                         </AttachmentContent>
                         {!isUploading || entry.state === "pending" ? (

@@ -2,7 +2,14 @@
 
 import * as React from "react"
 import type { Row } from "@tanstack/react-table"
-import { AlertTriangle, Download, Eye, FileText, MoreHorizontal, Upload } from "lucide-react"
+import {
+  AlertTriangle,
+  Download,
+  Eye,
+  FileText,
+  MoreHorizontal,
+  Upload,
+} from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
@@ -209,10 +216,7 @@ export function DataTableRowActions<TData>({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Hủy</AlertDialogCancel>
-            <AlertDialogAction
-              variant="destructive"
-              onClick={handleDelete}
-            >
+            <AlertDialogAction variant="destructive" onClick={handleDelete}>
               Xóa tài liệu
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -259,7 +263,8 @@ export function DataTableRowActions<TData>({
             {/* Attachments section */}
             <div className="space-y-2">
               <p className="text-sm font-medium text-muted-foreground">
-                File đính kèm {attachments.length > 0 ? `(${attachments.length})` : ""}
+                File đính kèm{" "}
+                {attachments.length > 0 ? `(${attachments.length})` : ""}
               </p>
               {attachments.length === 0 ? (
                 <p className="text-sm text-muted-foreground italic">
@@ -268,7 +273,12 @@ export function DataTableRowActions<TData>({
               ) : (
                 <AttachmentGroup className="flex-col">
                   {attachments.map((att) => (
-                    <Attachment key={att.name} size="sm" state="done" className="w-full">
+                    <Attachment
+                      key={att.name}
+                      size="sm"
+                      state="done"
+                      className="w-full"
+                    >
                       <AttachmentMedia>
                         <FileText className="h-4 w-4 text-muted-foreground" />
                       </AttachmentMedia>
@@ -281,7 +291,13 @@ export function DataTableRowActions<TData>({
                       <AttachmentActions>
                         <AttachmentAction
                           aria-label={`Tải xuống ${att.name}`}
-                          onClick={() => window.open(att.url, "_blank", "noopener,noreferrer")}
+                          onClick={() =>
+                            window.open(
+                              att.url,
+                              "_blank",
+                              "noopener,noreferrer"
+                            )
+                          }
                         >
                           <Download className="h-4 w-4" />
                         </AttachmentAction>
