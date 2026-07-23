@@ -1,0 +1,1 @@
+Next.js App Router route groups; React Hook Form with @hookform/resolvers+zod for validation; Firebase Auth (`signInWithEmailPassword`, `signInWithGoogle`, `resetPassword`) bridged into NextAuth credentials provider; Sonner for toast feedback; shadcn/ui primitives (Card, Input, Button, Label).

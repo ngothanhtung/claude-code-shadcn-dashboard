@@ -1,0 +1,3 @@
+- Each feature page is a single `page.tsx` colocated under its own directory within the `(private)` route group.
+- Layout chrome (sidebar, header, footer, theme customizer) is defined once in the group's `layout.tsx` and never duplicated in child pages.
+- Child pages compose reusable feature modules rather than implementing UI chrome themselves.

@@ -1,0 +1,1 @@
+A React-based calendar feature providing month/list views, event CRUD interactions, sidebar navigation, and date picking, backed by mock JSON data and a Firestore query adapter.

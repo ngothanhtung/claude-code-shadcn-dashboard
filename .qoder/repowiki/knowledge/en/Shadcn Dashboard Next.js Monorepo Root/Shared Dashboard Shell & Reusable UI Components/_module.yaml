@@ -1,0 +1,23 @@
+schema_version: 1
+module_path: shared_features
+title: Shared Dashboard Shell & Reusable UI Components
+scope:
+    - src/components/auth-provider.tsx
+    - src/components/site-header.tsx
+    - src/components/site-footer.tsx
+    - src/components/nav-main.tsx
+    - src/components/nav-secondary.tsx
+    - src/components/nav-user.tsx
+    - src/components/command-search.tsx
+    - src/components/app-sidebar.tsx
+    - src/components/theme-provider.tsx
+    - src/components/mode-toggle.tsx
+    - src/components/color-picker.tsx
+    - src/components/dynamic-imports.ts
+    - src/components/image-3d.tsx
+    - src/components/logo.tsx
+    - src/components/pricing-plans.tsx
+    - src/components/dot-pattern.tsx
+source_files: []
+depends_on: []
+related_to: []

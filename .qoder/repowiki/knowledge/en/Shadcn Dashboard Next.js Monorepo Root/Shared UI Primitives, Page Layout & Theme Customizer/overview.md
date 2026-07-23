@@ -1,0 +1,1 @@
+React component library of shadcn/ui primitives plus a BaseLayout shell and an in-app theme/layout customizer that rewrites CSS variables at runtime.

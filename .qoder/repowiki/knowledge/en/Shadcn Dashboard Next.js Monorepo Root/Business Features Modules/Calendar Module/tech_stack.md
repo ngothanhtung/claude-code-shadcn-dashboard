@@ -1,0 +1,1 @@
+React (Next.js client components), date-fns for date manipulation, lucide-react for icons, shadcn/ui primitives (Button, Dialog, Sheet, DropdownMenu, etc.), and a Firestore query adapter (`@/lib/firebase/firestore-query`) used to bridge mock JSON data into a Firestore-like API.

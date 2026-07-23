@@ -1,0 +1,8 @@
+schema_version: 1
+module_path: app_shell/auth_pages
+title: Authentication & Error Pages (Next.js App Router)
+scope:
+    - src/app/(auth)/
+source_files: []
+depends_on: []
+related_to: []

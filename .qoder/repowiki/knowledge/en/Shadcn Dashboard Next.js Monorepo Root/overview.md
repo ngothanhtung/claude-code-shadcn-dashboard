@@ -1,0 +1,1 @@
+Root of a single-Next-App monorepo that wires shadcn/ui primitives, cross-cutting services, and feature modules into one App Router application backed by Firestore.

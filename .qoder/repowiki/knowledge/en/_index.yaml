@@ -1,0 +1,260 @@
+# 知识卡导出索引文件
+schema_version: 1
+locale: en-US
+branch: firebase-storage
+nodes_managed: true
+exported_at: "2026-07-23T03:44:19Z"
+modules:
+    "":
+        dir_name: Shadcn Dashboard Next.js Monorepo Root
+        title: Shadcn Dashboard Next.js Monorepo Root
+        scope:
+            - CLAUDE.md
+            - package.json
+            - next.config.ts
+            - tsconfig.json
+            - components.json
+            - firestore.rules
+            - eslint.config.mjs
+            - postcss.config.mjs
+            - .prettierrc
+            - .editorconfig
+            - .gitignore
+            - .env.example
+            - .gitattributes
+            - .prettierignore
+            - package-lock.json
+        source_files: []
+        children:
+            - app_shell
+            - business_features
+            - cross_cutting
+            - dashboard_features
+            - shared_features
+            - ui_components
+        depends_on: []
+        related_to: []
+    app_shell:
+        dir_name: Next.js App Shell (App Router)
+        title: Next.js App Shell (App Router)
+        scope:
+            - src/app/
+        source_files: []
+        children:
+            - app_shell/api_routes
+            - app_shell/auth_pages
+            - app_shell/private_dashboard
+        depends_on: []
+        related_to: []
+    app_shell/api_routes:
+        dir_name: Next.js App Router API Endpoints
+        title: Next.js App Router API Endpoints
+        scope:
+            - src/app/api/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: business_features/users
+    app_shell/auth_pages:
+        dir_name: Authentication & Error Pages (Next.js App Router)
+        title: Authentication & Error Pages (Next.js App Router)
+        scope:
+            - src/app/(auth)/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    app_shell/private_dashboard:
+        dir_name: Private Dashboard Shell (Authenticated Route Group)
+        title: Private Dashboard Shell (Authenticated Route Group)
+        scope:
+            - src/app/(private)/
+        source_files: []
+        children:
+            - app_shell/private_dashboard/communication_and_dashboards
+            - app_shell/private_dashboard/productivity_features
+            - app_shell/private_dashboard/settings
+        depends_on: []
+        related_to: []
+    app_shell/private_dashboard/communication_and_dashboards:
+        dir_name: Private-Route Chat & Dashboard Pages
+        title: Private-Route Chat & Dashboard Pages
+        scope:
+            - src/app/(private)/chat/
+            - src/app/(private)/dashboard/
+            - src/app/(private)/dashboard-2/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: business_features/chat
+            - path: dashboard_features
+    app_shell/private_dashboard/productivity_features:
+        dir_name: Productivity Features Dashboard Pages
+        title: Productivity Features Dashboard Pages
+        scope:
+            - src/app/(private)/tasks/
+            - src/app/(private)/calendar/
+            - src/app/(private)/documents/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: business_features/calendar
+            - path: business_features/documents
+            - path: business_features/tasks
+    app_shell/private_dashboard/settings:
+        dir_name: Private Settings Pages (Account, Appearance, Connections, Notifications, User)
+        title: Private Settings Pages (Account, Appearance, Connections, Notifications, User)
+        scope:
+            - src/app/(private)/settings/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: cross_cutting
+    business_features:
+        dir_name: Business Features Modules
+        title: Business Features Modules
+        scope:
+            - src/modules/calendar/
+            - src/modules/chat/
+            - src/modules/customers/
+            - src/modules/documents/
+            - src/modules/tasks/
+            - src/modules/users/
+        source_files: []
+        children:
+            - business_features/calendar
+            - business_features/chat
+            - business_features/customers
+            - business_features/documents
+            - business_features/tasks
+            - business_features/users
+        depends_on: []
+        related_to: []
+    business_features/calendar:
+        dir_name: Calendar Module
+        title: Calendar Module
+        scope:
+            - src/modules/calendar/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: app_shell/private_dashboard/productivity_features
+    business_features/chat:
+        dir_name: Chat & Messaging Feature
+        title: Chat & Messaging Feature
+        scope:
+            - src/modules/chat/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: app_shell/private_dashboard/communication_and_dashboards
+    business_features/customers:
+        dir_name: Customers Feature (CRUD, Table & RLS)
+        title: Customers Feature (CRUD, Table & RLS)
+        scope:
+            - src/modules/customers/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    business_features/documents:
+        dir_name: Documents & Attachments Feature
+        title: Documents & Attachments Feature
+        scope:
+            - src/modules/documents/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: app_shell/private_dashboard/productivity_features
+    business_features/tasks:
+        dir_name: Tasks Feature (CRUD Table & Dashboard)
+        title: Tasks Feature (CRUD Table & Dashboard)
+        scope:
+            - src/modules/tasks/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: app_shell/private_dashboard/productivity_features
+    business_features/users:
+        dir_name: User & Role Administration (Admin Dashboard)
+        title: User & Role Administration (Admin Dashboard)
+        scope:
+            - src/modules/users/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: app_shell/api_routes
+    cross_cutting:
+        dir_name: Cross-Cutting Services Auth, Firebase, Theme & UI Utilities
+        title: 'Cross-Cutting Services: Auth, Firebase, Theme & UI Utilities'
+        scope:
+            - src/lib/auth/
+            - src/lib/firebase/
+            - src/config/
+            - src/hooks/
+            - src/contexts/
+            - src/utils/
+            - src/types/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: app_shell/private_dashboard/settings
+    dashboard_features:
+        dir_name: Dashboard & Settings Feature Modules
+        title: Dashboard & Settings Feature Modules
+        scope:
+            - src/modules/dashboard-1/
+            - src/modules/dashboard-2/
+            - src/modules/settings/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: app_shell/private_dashboard/communication_and_dashboards
+            - path: ui_components
+    shared_features:
+        dir_name: Shared Dashboard Shell & Reusable UI Components
+        title: Shared Dashboard Shell & Reusable UI Components
+        scope:
+            - src/components/auth-provider.tsx
+            - src/components/site-header.tsx
+            - src/components/site-footer.tsx
+            - src/components/nav-main.tsx
+            - src/components/nav-secondary.tsx
+            - src/components/nav-user.tsx
+            - src/components/command-search.tsx
+            - src/components/app-sidebar.tsx
+            - src/components/theme-provider.tsx
+            - src/components/mode-toggle.tsx
+            - src/components/color-picker.tsx
+            - src/components/dynamic-imports.ts
+            - src/components/image-3d.tsx
+            - src/components/logo.tsx
+            - src/components/pricing-plans.tsx
+            - src/components/dot-pattern.tsx
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []
+    ui_components:
+        dir_name: Shared UI Primitives, Page Layout & Theme Customizer
+        title: Shared UI Primitives, Page Layout & Theme Customizer
+        scope:
+            - src/components/ui/
+            - src/components/layouts/
+            - src/components/theme-customizer/
+        source_files: []
+        children: []
+        depends_on: []
+        related_to:
+            - path: dashboard_features

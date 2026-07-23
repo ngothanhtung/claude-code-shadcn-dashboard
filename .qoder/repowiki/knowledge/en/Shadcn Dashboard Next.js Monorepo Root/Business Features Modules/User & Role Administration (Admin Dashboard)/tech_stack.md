@@ -1,0 +1,1 @@
+React Server Components client entry (`"use client"`) with TanStack Table v8 for table features, Zod for schema validation, Firebase Admin SDK via Next.js API routes (`/api/admin/users`) for user mutations, and Firestore client SDK for roles and the many-to-many `users_roles` collection.

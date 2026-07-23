@@ -1,0 +1,1 @@
+Next.js App Router pages under the private route group that let authenticated users manage account, appearance, connections, notifications, and profile settings.

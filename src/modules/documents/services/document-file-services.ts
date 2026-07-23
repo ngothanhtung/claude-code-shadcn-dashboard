@@ -5,13 +5,7 @@ import {
   deleteObject,
 } from "firebase/storage"
 
-import {
-  collection,
-  deleteDoc,
-  doc,
-  getDocs,
-  setDoc,
-} from "firebase/firestore"
+import { collection, deleteDoc, doc, getDocs, setDoc } from "firebase/firestore"
 
 import { db, storage } from "@/lib/firebase/client"
 import type { DocumentAttachment } from "./types/document-types"
@@ -25,6 +19,31 @@ function getAttachmentsCollectionPath(documentId: string): string {
 
 function getStorageBasePath(documentId: string): string {
   return `${COLLECTION_PATH}/${documentId}/attachments`
+}
+
+/**
+ * Convert a raw file name into a storage-safe name:
+ * strip diacritics (Vietnamese support), lowercase, replace runs of
+ * non-alphanumeric characters with a single dash, keep the extension.
+ *
+ * e.g. "Báo Cáo Tổng Kết Q2.pdf" → "bao-cao-tong-ket-q2.pdf"
+ */
+export function toSafeFileName(fileName: string): string {
+  const dotIndex = fileName.lastIndexOf(".")
+  const base = dotIndex === -1 ? fileName : fileName.slice(0, dotIndex)
+  const ext = dotIndex === -1 ? "" : fileName.slice(dotIndex + 1).toLowerCase()
+
+  const safeBase =
+    base
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/đ/gi, "d")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 100) || "file"
+
+  return ext ? `${safeBase}.${ext}` : safeBase
 }
 
 // ---------------------------------------------------------------------------
@@ -53,9 +72,10 @@ export interface UploadResult {
 export async function uploadFileToDocument(
   documentId: string,
   file: File,
-  onProgress?: (pct: number) => void,
+  onProgress?: (pct: number) => void
 ): Promise<UploadResult> {
-  const storagePath = `${getStorageBasePath(documentId)}/${file.name}`
+  const safeName = toSafeFileName(file.name)
+  const storagePath = `${getStorageBasePath(documentId)}/${safeName}`
   const storageRef = ref(storage, storagePath)
 
   // Upload to Firebase Storage
@@ -66,7 +86,7 @@ export async function uploadFileToDocument(
       "state_changed",
       (snapshot) => {
         const pct = Math.round(
-          (snapshot.bytesTransferred / snapshot.totalBytes) * 100,
+          (snapshot.bytesTransferred / snapshot.totalBytes) * 100
         )
         onProgress?.(pct)
       },
@@ -82,7 +102,7 @@ export async function uploadFileToDocument(
           const attachmentRef = doc(
             db,
             getAttachmentsCollectionPath(documentId),
-            attachmentId,
+            attachmentId
           )
 
           const attachment: DocumentAttachment = {
@@ -99,7 +119,7 @@ export async function uploadFileToDocument(
         } catch (writeError) {
           reject(writeError)
         }
-      },
+      }
     )
   })
 }
@@ -112,7 +132,7 @@ export async function uploadFileToDocument(
 export async function uploadFilesToDocument(
   documentId: string,
   files: File[],
-  onFileProgress?: (fileName: string, pct: number) => void,
+  onFileProgress?: (fileName: string, pct: number) => void
 ): Promise<UploadResult[]> {
   const CONCURRENCY = 3
   const results: UploadResult[] = []
@@ -124,9 +144,9 @@ export async function uploadFilesToDocument(
     const batchResults = await Promise.allSettled(
       batch.map((file) =>
         uploadFileToDocument(documentId, file, (pct) =>
-          onFileProgress?.(file.name, pct),
-        ),
-      ),
+          onFileProgress?.(file.name, pct)
+        )
+      )
     )
 
     batchResults.forEach((result, idx) => {
@@ -135,7 +155,7 @@ export async function uploadFilesToDocument(
       } else {
         console.error(
           `[DocumentFileServices] Failed to upload ${batch[idx].name}:`,
-          result.reason,
+          result.reason
         )
       }
     })
@@ -152,10 +172,10 @@ export async function uploadFilesToDocument(
  * List all attachments for a document from the Firestore subcollection.
  */
 export async function listDocumentAttachments(
-  documentId: string,
+  documentId: string
 ): Promise<DocumentAttachment[]> {
   const snapshot = await getDocs(
-    collection(db, getAttachmentsCollectionPath(documentId)),
+    collection(db, getAttachmentsCollectionPath(documentId))
   )
 
   return snapshot.docs.map((d) => d.data() as DocumentAttachment)
@@ -173,12 +193,13 @@ export async function listDocumentAttachments(
  */
 export async function deleteDocumentFile(
   documentId: string,
-  fileName: string,
+  fileName: string
 ): Promise<void> {
   const attachmentId = encodeURIComponent(fileName)
 
-  // 1. Delete Storage file
-  const storagePath = `${getStorageBasePath(documentId)}/${fileName}`
+  // 1. Delete Storage file (uses the same safe name as upload)
+  const safeName = toSafeFileName(fileName)
+  const storagePath = `${getStorageBasePath(documentId)}/${safeName}`
   const storageRef = ref(storage, storagePath)
   try {
     await deleteObject(storageRef)
@@ -186,12 +207,12 @@ export async function deleteDocumentFile(
     // If the file doesn't exist in Storage (e.g. already deleted) just log
     console.warn(
       `[DocumentFileServices] Could not delete Storage file ${storagePath}:`,
-      err,
+      err
     )
   }
 
   // 2. Delete Firestore metadata doc
   await deleteDoc(
-    doc(db, getAttachmentsCollectionPath(documentId), attachmentId),
+    doc(db, getAttachmentsCollectionPath(documentId), attachmentId)
   )
 }

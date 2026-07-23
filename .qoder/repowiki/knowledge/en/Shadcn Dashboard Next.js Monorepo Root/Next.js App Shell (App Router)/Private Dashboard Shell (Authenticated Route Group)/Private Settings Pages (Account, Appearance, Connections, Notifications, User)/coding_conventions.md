@@ -1,0 +1,5 @@
+- Every page starts with a `'use client'` directive and exports a single default function component as the route handler.
+- Forms are built with `react-hook-form` + `zod`: define a `z.object` schema, derive a `z.infer<typeof schema>` type, pass it to `useForm({ resolver: zodResolver(schema), defaultValues })`, and render fields through `<FormField control={form.control} name=... render={({ field }) => ...}>`.
+- Firebase-backed pages subscribe to auth state via `onAuthStateChanged(auth, async (user) => { ... })` inside a `useEffect` and return an unsubscribe function in the cleanup.
+- Async mutations are wrapped in `toast.promise(promise, { loading, success, error: getFirebaseAuthErrorMessage(err) })` so every save shows a consistent loading/success/error banner.
+- Destructive actions (e.g. delete account) are gated behind `AlertDialog` with a password confirmation input before calling the mutation.

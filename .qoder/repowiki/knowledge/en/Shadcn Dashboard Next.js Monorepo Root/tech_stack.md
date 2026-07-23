@@ -1,0 +1,1 @@
+Next.js 16 with Turbopack, React 19, TypeScript strict mode, Tailwind v4 + PostCSS, shadcn/ui (Radix primitives), next-auth v5 beta, Firebase (client + admin SDKs), Zustand for state, Zod for validation, and TanStack Table — all versions pinned centrally in `package.json` and shared by every child module.

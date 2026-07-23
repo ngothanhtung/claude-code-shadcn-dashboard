@@ -1,0 +1,15 @@
+schema_version: 1
+module_path: cross_cutting
+title: 'Cross-Cutting Services: Auth, Firebase, Theme & UI Utilities'
+scope:
+    - src/lib/auth/
+    - src/lib/firebase/
+    - src/config/
+    - src/hooks/
+    - src/contexts/
+    - src/utils/
+    - src/types/
+source_files: []
+depends_on: []
+related_to:
+    - path: app_shell/private_dashboard/settings

@@ -1,0 +1,5 @@
+- All client components and the store begin with the `"use client"` directive to mark them as React Client Components.
+- Shared domain types (`User`, `Message`, `Conversation`) live in `services/types/chat-types.ts` and are imported by both services and components rather than re-declared locally.
+- Mock fixtures are kept as plain JSON under `services/data/` and surfaced through a single `chat-mockData` object that casts each fixture to its corresponding type.
+- Zustand actions follow an immutable-update pattern using functional `set((state) => ({ ... }))` updates instead of direct mutation.
+- Components consume state exclusively through the `useChat` selector hook rather than receiving props for every piece of shared state.

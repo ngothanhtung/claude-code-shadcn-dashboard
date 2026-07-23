@@ -32,9 +32,11 @@ import type { Document } from "@/modules/documents/services/types/document-types
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
+  canManage?: boolean
   onAddDocument?: (
     document: Omit<Document, "id">
   ) => Promise<Document | void> | void
+  onFilesUploaded?: (documentId: string) => void | Promise<void>
   onSeedDocuments?: () => void | Promise<void>
   isSeedingDocuments?: boolean
 }
@@ -42,15 +44,18 @@ interface DataTableProps<TData, TValue> {
 export function DataTable<TData, TValue>({
   columns,
   data,
+  canManage = false,
   onAddDocument,
+  onFilesUploaded,
   onSeedDocuments,
   isSeedingDocuments,
 }: DataTableProps<TData, TValue>) {
   const [rowSelection, setRowSelection] = React.useState({})
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({})
-  const [columnFilters, setColumnFilters] =
-    React.useState<ColumnFiltersState>([])
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
+    []
+  )
   const [sorting, setSorting] = React.useState<SortingState>([])
 
   const table = useReactTable({
@@ -79,7 +84,9 @@ export function DataTable<TData, TValue>({
     <div className="space-y-4">
       <DataTableToolbar
         table={table}
+        canManage={canManage}
         onAddDocument={onAddDocument}
+        onFilesUploaded={onFilesUploaded}
         onSeedDocuments={onSeedDocuments}
         isSeedingDocuments={isSeedingDocuments}
       />

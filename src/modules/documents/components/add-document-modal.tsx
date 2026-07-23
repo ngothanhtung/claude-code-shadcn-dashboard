@@ -44,19 +44,23 @@ import {
   isExtensionAllowed,
   MAX_FILE_SIZE_BYTES,
   type Document,
-  type DocumentAttachment,
   type DocumentFormData,
 } from "@/modules/documents/services/types/document-types"
 
 interface AddDocumentModalProps {
   /**
    * Create the document in Firestore. Should return the created document
-   * (with its Firestore-assigned `id`) so the modal can transition into
-   * the upload step and persist attachments under that id.
+   * (with its Firestore-assigned `id`) so attachments can be uploaded
+   * under that id in the same submit action.
    */
   onAddDocument?: (
     document: Omit<Document, "id">
   ) => Promise<Document | void> | void
+  /**
+   * Called after attachments have been uploaded so the parent can
+   * refresh its attachments cache for the given document.
+   */
+  onFilesUploaded?: (documentId: string) => void | Promise<void>
   trigger?: React.ReactNode
 }
 
@@ -87,6 +91,7 @@ function validateFile(file: File): string | null {
 
 export function AddDocumentModal({
   onAddDocument,
+  onFilesUploaded,
   trigger,
 }: AddDocumentModalProps) {
   const [open, setOpen] = useState(false)
@@ -97,92 +102,25 @@ export function AddDocumentModal({
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
-  // After the document is created, transition into the upload step.
-  const [createdDocument, setCreatedDocument] = useState<Document | null>(null)
   const [fileEntries, setFileEntries] = useState<FileEntry[]>([])
-  const [isUploading, setIsUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const resetState = useCallback(() => {
     setFormData({ name: "", status: "draft", summary: "" })
     setErrors({})
-    setCreatedDocument(null)
     setFileEntries([])
-    setIsUploading(false)
     if (fileInputRef.current) fileInputRef.current.value = ""
   }, [])
 
   const handleOpenChange = useCallback(
     (nextOpen: boolean) => {
-      if (!nextOpen && (isSubmitting || isUploading)) return
+      if (!nextOpen && isSubmitting) return
       if (!nextOpen) resetState()
       setOpen(nextOpen)
     },
-    [isSubmitting, isUploading, resetState]
+    [isSubmitting, resetState]
   )
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsSubmitting(true)
-
-    try {
-      const validatedData = documentFormSchema.parse(formData)
-
-      // Firestore auto-generates the document ID via addDoc — do not assign one here.
-      const newDocument: Omit<Document, "id"> = {
-        name: validatedData.name,
-        status: validatedData.status,
-        summary: validatedData.summary ?? "",
-      }
-
-      const created = await onAddDocument?.(newDocument)
-
-      if (created) {
-        // Transition to the upload step within the same dialog.
-        setCreatedDocument(created)
-        toast.success("Tạo tài liệu thành công", {
-          description: `Tài liệu "${created.name}" đã được tạo. Bạn có thể upload file đính kèm ngay bây giờ.`,
-        })
-      } else {
-        // Caller didn't return the document — fall back to closing the dialog.
-        toast.success("Tạo tài liệu thành công", {
-          description: `Tài liệu "${newDocument.name}" đã được tạo.`,
-        })
-        resetState()
-        setOpen(false)
-      }
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        const newErrors: Record<string, string> = {}
-        error.issues.forEach((issue) => {
-          if (issue.path[0]) {
-            newErrors[issue.path[0] as string] = issue.message
-          }
-        })
-        setErrors(newErrors)
-      } else {
-        setErrors({
-          root:
-            error instanceof Error ? error.message : "Không thể tạo tài liệu",
-        })
-        toast.error("Lỗi khi tạo tài liệu", {
-          description:
-            error instanceof Error
-              ? error.message
-              : "Đã xảy ra lỗi không xác định.",
-        })
-      }
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
-  const handleCancel = () => {
-    resetState()
-    setOpen(false)
-  }
-
-  // File picker handlers for the upload step.
   const addFiles = useCallback((incoming: FileList | File[]) => {
     const newFiles = Array.from(incoming)
     setFileEntries((prev) => [
@@ -213,84 +151,140 @@ export function AddDocumentModal({
     [addFiles]
   )
 
-  const handleUpload = useCallback(async () => {
-    if (!createdDocument) return
+  /**
+   * Single-step submit: validate form + files → create document → upload
+   * attachments (if any) → close.
+   */
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setErrors({})
 
-    // Validate files
+    // 1. Validate form fields
+    let validatedData: DocumentFormData
+    try {
+      validatedData = documentFormSchema.parse(formData)
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        const newErrors: Record<string, string> = {}
+        error.issues.forEach((issue) => {
+          if (issue.path[0]) {
+            newErrors[issue.path[0] as string] = issue.message
+          }
+        })
+        setErrors(newErrors)
+      }
+      return
+    }
+
+    // 2. Validate attached files
     const validationErrors: string[] = []
-    setFileEntries((prev) =>
-      prev.map((entry) => {
-        const err = validateFile(entry.file)
-        if (err) {
-          validationErrors.push(err)
-          return { ...entry, state: "error" as const, error: err }
-        }
-        return entry
-      })
-    )
+    const validatedEntries = fileEntries.map((entry) => {
+      const err = validateFile(entry.file)
+      if (err) {
+        validationErrors.push(err)
+        return { ...entry, state: "error" as const, error: err }
+      }
+      return entry
+    })
 
     if (validationErrors.length > 0) {
+      setFileEntries(validatedEntries)
       toast.error("Có file không hợp lệ", {
         description: validationErrors[0],
       })
       return
     }
 
-    setIsUploading(true)
+    setIsSubmitting(true)
+
     try {
-      setFileEntries((prev) =>
-        prev.map((e) => ({ ...e, state: "uploading" as const }))
-      )
+      // 3. Create the document
+      const newDocument: Omit<Document, "id"> = {
+        name: validatedData.name,
+        status: validatedData.status,
+        summary: validatedData.summary ?? "",
+      }
 
-      await uploadFilesToDocument(
-        createdDocument.id,
-        fileEntries.map((e) => e.file),
-        (fileName, pct) => {
-          setFileEntries((prev) =>
-            prev.map((e) =>
-              e.file.name === fileName ? { ...e, progress: pct } : e
+      const created = await onAddDocument?.(newDocument)
+
+      // 4. Upload attachments if files were selected
+      const pendingFiles = fileEntries.map((entry) => entry.file)
+
+      if (pendingFiles.length > 0 && created?.id) {
+        setFileEntries((prev) =>
+          prev.map((entry) => ({ ...entry, state: "uploading" as const }))
+        )
+
+        await uploadFilesToDocument(
+          created.id,
+          pendingFiles,
+          (fileName, pct) => {
+            setFileEntries((prev) =>
+              prev.map((entry) =>
+                entry.file.name === fileName
+                  ? { ...entry, progress: pct }
+                  : entry
+              )
             )
-          )
-        }
-      )
+          }
+        )
 
-      setFileEntries((prev) =>
-        prev.map((e) => ({ ...e, state: "success" as const, progress: 100 }))
-      )
+        setFileEntries((prev) =>
+          prev.map((entry) => ({
+            ...entry,
+            state: "success" as const,
+            progress: 100,
+          }))
+        )
 
-      const uploadedCount = fileEntries.length
-      toast.success("Upload thành công", {
-        description: `${uploadedCount} file đã được tải lên.`,
+        // Notify parent so it refreshes the attachments cache for this doc.
+        await onFilesUploaded?.(created.id)
+      }
+
+      // 5. Success — close dialog
+      toast.success("Tạo tài liệu thành công", {
+        description:
+          pendingFiles.length > 0
+            ? `Tài liệu "${validatedData.name}" đã được tạo cùng ${pendingFiles.length} file đính kèm.`
+            : `Tài liệu "${validatedData.name}" đã được tạo.`,
       })
 
-      // Close after a short delay so the success state is visible.
-      setTimeout(() => {
-        resetState()
-        setOpen(false)
-      }, 600)
-    } catch (err) {
+      setTimeout(
+        () => {
+          resetState()
+          setOpen(false)
+        },
+        pendingFiles.length > 0 ? 600 : 0
+      )
+    } catch (error) {
       setFileEntries((prev) =>
-        prev.map((e) =>
-          e.state === "uploading"
-            ? { ...e, state: "error" as const, error: "Lỗi upload" }
-            : e
+        prev.map((entry) =>
+          entry.state === "uploading"
+            ? { ...entry, state: "error" as const, error: "Lỗi upload" }
+            : entry
         )
       )
-      toast.error("Lỗi khi upload file", {
+      setErrors({
+        root: error instanceof Error ? error.message : "Không thể tạo tài liệu",
+      })
+      toast.error("Lỗi khi tạo tài liệu", {
         description:
-          err instanceof Error ? err.message : "Đã xảy ra lỗi không xác định.",
+          error instanceof Error
+            ? error.message
+            : "Đã xảy ra lỗi không xác định.",
       })
     } finally {
-      setIsUploading(false)
+      setIsSubmitting(false)
     }
-  }, [createdDocument, fileEntries, resetState])
+  }
 
-  const handleSkipUpload = useCallback(() => {
+  const handleCancel = () => {
     resetState()
     setOpen(false)
-  }, [resetState])
+  }
 
-  const pendingCount = fileEntries.filter((e) => e.state === "pending").length
+  const isUploading = fileEntries.some((e) => e.state === "uploading")
+  const fileCount = fileEntries.length
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -308,255 +302,229 @@ export function AddDocumentModal({
         )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-131.25">
-        {createdDocument ? (
-          // Step 2: upload files for the newly created document
-          <>
-            <DialogHeader>
-              <DialogTitle>Upload file đính kèm</DialogTitle>
-              <DialogDescription>
-                Tài liệu{" "}
-                <span className="font-semibold text-foreground">
-                  &ldquo;{createdDocument.name}&rdquo;
-                </span>{" "}
-                đã được tạo. Bạn có thể upload file đính kèm ngay bây giờ hoặc
-                bỏ qua để thêm sau.
-              </DialogDescription>
-            </DialogHeader>
+        <DialogHeader>
+          <DialogTitle>Thêm tài liệu mới</DialogTitle>
+          <DialogDescription>
+            Tạo tài liệu mới và đính kèm file (nếu có) trong một bước.
+          </DialogDescription>
+        </DialogHeader>
 
-            <div className="space-y-4">
-              {/* Drop zone */}
-              <div
-                onDragOver={handleDragOver}
-                onDrop={handleDrop}
-                onClick={() => fileInputRef.current?.click()}
-                className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-6 text-center transition-colors hover:border-primary/50 hover:bg-muted/30"
-              >
-                <Upload className="h-8 w-8 text-muted-foreground" />
-                <p className="text-sm text-muted-foreground">
-                  Kéo thả file vào đây hoặc{" "}
-                  <span className="font-medium text-primary">chọn file</span>
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Hỗ trợ: PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX, CSV, TXT, …
-                </p>
-              </div>
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {errors.root ? (
+            <p className="text-sm text-destructive">{errors.root}</p>
+          ) : null}
 
-              <input
-                ref={fileInputRef}
-                type="file"
-                multiple
-                title="Chọn file đính kèm"
-                aria-label="Chọn file đính kèm"
-                className="hidden"
-                accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.odt,.ods,.odp,.rtf,.txt,.md,.csv,.json,.xml"
-                onChange={(e) => {
-                  if (e.target.files?.length) {
-                    addFiles(e.target.files)
-                    e.target.value = ""
-                  }
-                }}
-              />
+          {/* Name */}
+          <div className="space-y-2">
+            <Label htmlFor="doc-name">
+              Tên tài liệu <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              id="doc-name"
+              placeholder="Nhập tên tài liệu..."
+              maxLength={100}
+              value={formData.name}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, name: e.target.value }))
+              }
+              className={errors.name ? "border-destructive" : ""}
+            />
+            <div className="flex items-center justify-between">
+              {errors.name ? (
+                <p className="text-sm text-destructive">{errors.name}</p>
+              ) : (
+                <span />
+              )}
+              <span className="text-xs text-muted-foreground">
+                {formData.name.length}/100
+              </span>
+            </div>
+          </div>
 
-              {/* File list */}
-              {fileEntries.length > 0 ? (
-                <AttachmentGroup className="max-h-[200px] flex-col overflow-y-auto">
-                  {fileEntries.map((entry, idx) => {
-                    const stateMap: Record<
-                      FileEntry["state"],
-                      "idle" | "uploading" | "error" | "done"
-                    > = {
-                      pending: "idle",
-                      uploading: "uploading",
-                      error: "error",
-                      success: "done",
-                    }
-                    return (
-                      <Attachment
-                        key={`${entry.file.name}-${idx}`}
-                        size="sm"
-                        state={stateMap[entry.state]}
-                        className="w-full"
-                      >
-                        <AttachmentMedia>
-                          <FileText className="h-4 w-4 text-muted-foreground" />
-                        </AttachmentMedia>
-                        <AttachmentContent>
-                          <AttachmentTitle>{entry.file.name}</AttachmentTitle>
-                          <AttachmentDescription>
-                            {formatFileSize(entry.file.size)}
-                            {entry.state === "error"
-                              ? ` — ${entry.error}`
-                              : entry.state === "uploading" ||
-                                  entry.state === "success"
-                                ? ` · ${entry.progress}%`
-                                : ""}
-                          </AttachmentDescription>
-                          {entry.state === "uploading" ||
-                          entry.state === "success" ? (
-                            <Progress
-                              className="mt-1 h-1.5"
-                              value={entry.progress}
-                            />
-                          ) : null}
-                        </AttachmentContent>
-                        {!isUploading || entry.state === "pending" ? (
-                          <AttachmentActions>
-                            <AttachmentAction
-                              aria-label={`Xóa ${entry.file.name}`}
-                              onClick={() => removeFileEntry(idx)}
-                            >
-                              <X className="h-4 w-4" />
-                            </AttachmentAction>
-                          </AttachmentActions>
-                        ) : null}
-                      </Attachment>
-                    )
-                  })}
-                </AttachmentGroup>
-              ) : null}
+          {/* Status */}
+          <div className="space-y-2">
+            <Label htmlFor="doc-status">Trạng thái</Label>
+            <Select
+              value={formData.status}
+              onValueChange={(value: "draft" | "published") =>
+                setFormData((prev) => ({ ...prev, status: value }))
+              }
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Chọn trạng thái" />
+              </SelectTrigger>
+              <SelectContent>
+                {documentStatuses.map((status) => (
+                  <SelectItem key={status.value} value={status.value}>
+                    <div className="flex items-center">
+                      {status.icon && (
+                        <status.icon className="mr-2 h-4 w-4 text-muted-foreground" />
+                      )}
+                      {status.label}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-              {fileEntries.some((e) => e.state === "error") ? (
-                <div className="flex items-start gap-2 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-                  <span>
-                    Một hoặc nhiều file không hợp lệ. Kiểm tra lại định dạng.
-                  </span>
-                </div>
-              ) : null}
+          {/* Summary */}
+          <div className="space-y-2">
+            <Label htmlFor="doc-summary">Tóm tắt</Label>
+            <Textarea
+              id="doc-summary"
+              placeholder="Nhập tóm tắt tài liệu (không bắt buộc)..."
+              value={formData.summary ?? ""}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  summary: e.target.value,
+                }))
+              }
+              rows={3}
+            />
+          </div>
+
+          {/* Attachments */}
+          <div className="space-y-2">
+            <Label>File đính kèm</Label>
+
+            {/* Drop zone */}
+            <div
+              onDragOver={handleDragOver}
+              onDrop={handleDrop}
+              onClick={() => fileInputRef.current?.click()}
+              className="flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-lg border-2 border-dashed p-4 text-center transition-colors hover:border-primary/50 hover:bg-muted/30"
+            >
+              <Upload className="h-6 w-6 text-muted-foreground" />
+              <p className="text-sm text-muted-foreground">
+                Kéo thả file vào đây hoặc{" "}
+                <span className="font-medium text-primary">chọn file</span>
+              </p>
+              <p className="text-xs text-muted-foreground">
+                PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX, CSV, TXT, … — tối đa 20
+                MB/file
+              </p>
             </div>
 
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleSkipUpload}
-                className="cursor-pointer"
-                disabled={isUploading}
-              >
-                Bỏ qua
-              </Button>
-              <Button
-                type="button"
-                onClick={handleUpload}
-                disabled={pendingCount === 0 || isUploading}
-                className="cursor-pointer"
-              >
-                <Upload className="mr-2 h-4 w-4" />
-                {isUploading
-                  ? "Đang tải lên..."
-                  : `Upload ${pendingCount} file`}
-              </Button>
-            </DialogFooter>
-          </>
-        ) : (
-          // Step 1: collect document info
-          <>
-            <DialogHeader>
-              <DialogTitle>Thêm tài liệu mới</DialogTitle>
-              <DialogDescription>
-                Tạo tài liệu mới để quản lý nội dung. Điền thông tin bên dưới.
-              </DialogDescription>
-            </DialogHeader>
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              title="Chọn file đính kèm"
+              aria-label="Chọn file đính kèm"
+              className="hidden"
+              accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.odt,.ods,.odp,.rtf,.txt,.md,.csv,.json,.xml"
+              onChange={(e) => {
+                if (e.target.files?.length) {
+                  addFiles(e.target.files)
+                  e.target.value = ""
+                }
+              }}
+            />
 
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {errors.root ? (
-                <p className="text-sm text-destructive">{errors.root}</p>
-              ) : null}
-
-              {/* Name */}
-              <div className="space-y-2">
-                <Label htmlFor="doc-name">
-                  Tên tài liệu <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="doc-name"
-                  placeholder="Nhập tên tài liệu..."
-                  maxLength={100}
-                  value={formData.name}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, name: e.target.value }))
+            {/* File list */}
+            {fileEntries.length > 0 ? (
+              <AttachmentGroup className="max-h-[160px] flex-col overflow-y-auto">
+                {fileEntries.map((entry, idx) => {
+                  const stateMap: Record<
+                    FileEntry["state"],
+                    "idle" | "uploading" | "error" | "done"
+                  > = {
+                    pending: "idle",
+                    uploading: "uploading",
+                    error: "error",
+                    success: "done",
                   }
-                  className={errors.name ? "border-destructive" : ""}
-                />
-                <div className="flex items-center justify-between">
-                  {errors.name ? (
-                    <p className="text-sm text-destructive">{errors.name}</p>
-                  ) : (
-                    <span />
-                  )}
-                  <span className="text-xs text-muted-foreground">
-                    {formData.name.length}/100
-                  </span>
-                </div>
-              </div>
+                  return (
+                    <Attachment
+                      key={`${entry.file.name}-${idx}`}
+                      size="sm"
+                      state={stateMap[entry.state]}
+                      className="w-full"
+                    >
+                      <AttachmentMedia>
+                        <FileText className="h-4 w-4 text-muted-foreground" />
+                      </AttachmentMedia>
+                      <AttachmentContent>
+                        <AttachmentTitle>{entry.file.name}</AttachmentTitle>
+                        <AttachmentDescription>
+                          {formatFileSize(entry.file.size)}
+                          {entry.state === "error"
+                            ? ` — ${entry.error}`
+                            : entry.state === "uploading" ||
+                                entry.state === "success"
+                              ? ` · ${entry.progress}%`
+                              : ""}
+                        </AttachmentDescription>
+                        {entry.state === "uploading" ||
+                        entry.state === "success" ? (
+                          <Progress
+                            className="mt-1 h-1.5"
+                            value={entry.progress}
+                          />
+                        ) : null}
+                      </AttachmentContent>
+                      {!isSubmitting || entry.state === "pending" ? (
+                        <AttachmentActions>
+                          <AttachmentAction
+                            aria-label={`Xóa ${entry.file.name}`}
+                            onClick={() => removeFileEntry(idx)}
+                          >
+                            <X className="h-4 w-4" />
+                          </AttachmentAction>
+                        </AttachmentActions>
+                      ) : null}
+                    </Attachment>
+                  )
+                })}
+              </AttachmentGroup>
+            ) : null}
 
-              {/* Status */}
-              <div className="space-y-2">
-                <Label htmlFor="doc-status">Trạng thái</Label>
-                <Select
-                  value={formData.status}
-                  onValueChange={(value: "draft" | "published") =>
-                    setFormData((prev) => ({ ...prev, status: value }))
-                  }
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Chọn trạng thái" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {documentStatuses.map((status) => (
-                      <SelectItem key={status.value} value={status.value}>
-                        <div className="flex items-center">
-                          {status.icon && (
-                            <status.icon className="mr-2 h-4 w-4 text-muted-foreground" />
-                          )}
-                          {status.label}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+            {fileEntries.some((e) => e.state === "error") ? (
+              <div className="flex items-start gap-2 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                <span>
+                  Một hoặc nhiều file không hợp lệ. Kiểm tra lại định dạng.
+                </span>
               </div>
+            ) : null}
+          </div>
 
-              {/* Summary */}
-              <div className="space-y-2">
-                <Label htmlFor="doc-summary">Tóm tắt</Label>
-                <Textarea
-                  id="doc-summary"
-                  placeholder="Nhập tóm tắt tài liệu (không bắt buộc)..."
-                  value={formData.summary ?? ""}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      summary: e.target.value,
-                    }))
-                  }
-                  rows={4}
-                />
-              </div>
-
-              {/* Action Buttons */}
-              <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleCancel}
-                  className="cursor-pointer"
-                  disabled={isSubmitting}
-                >
-                  Hủy
-                </Button>
-                <Button
-                  type="submit"
-                  className="cursor-pointer"
-                  disabled={isSubmitting}
-                >
+          {/* Action Buttons */}
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleCancel}
+              className="cursor-pointer"
+              disabled={isSubmitting}
+            >
+              Hủy
+            </Button>
+            <Button
+              type="submit"
+              className="cursor-pointer"
+              disabled={isSubmitting}
+            >
+              {isUploading ? (
+                <>
+                  <Upload className="w-4 h-4 mr-2" />
+                  Đang tải lên...
+                </>
+              ) : (
+                <>
                   <Plus className="w-4 h-4 mr-2" />
-                  {isSubmitting ? "Đang tạo..." : "Tạo tài liệu"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </>
-        )}
+                  {isSubmitting
+                    ? "Đang tạo..."
+                    : fileCount > 0
+                      ? `Tạo + Upload ${fileCount} file`
+                      : "Tạo tài liệu"}
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   )

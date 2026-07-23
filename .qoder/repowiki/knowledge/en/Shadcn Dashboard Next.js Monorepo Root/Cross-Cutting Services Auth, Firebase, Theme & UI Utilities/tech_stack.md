@@ -1,0 +1,1 @@
+Firebase v10 modular SDK (`firebase/app`, `firebase/auth`, `firebase/firestore`, `firebase/storage`) with NextAuth for session handling; theme system drives shadcn/ui CSS variables (`--primary`, `--radius`, `--sidebar-*`, chart/sidebar font/shadow tokens) injected directly onto `document.documentElement`.

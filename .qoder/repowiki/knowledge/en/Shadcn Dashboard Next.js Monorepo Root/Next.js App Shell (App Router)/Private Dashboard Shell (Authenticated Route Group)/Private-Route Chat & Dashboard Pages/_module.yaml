@@ -1,0 +1,12 @@
+schema_version: 1
+module_path: app_shell/private_dashboard/communication_and_dashboards
+title: Private-Route Chat & Dashboard Pages
+scope:
+    - src/app/(private)/chat/
+    - src/app/(private)/dashboard/
+    - src/app/(private)/dashboard-2/
+source_files: []
+depends_on: []
+related_to:
+    - path: business_features/chat
+    - path: dashboard_features

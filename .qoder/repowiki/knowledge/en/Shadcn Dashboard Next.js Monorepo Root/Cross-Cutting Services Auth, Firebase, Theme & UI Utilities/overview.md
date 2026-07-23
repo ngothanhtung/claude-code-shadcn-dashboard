@@ -1,0 +1,1 @@
+Shared runtime services for authentication/authorization, Firebase client and admin SDKs, shadcn theme customization, and reusable React hooks/contexts consumed across the app.

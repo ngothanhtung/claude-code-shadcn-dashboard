@@ -62,6 +62,11 @@ export async function seedDocumentsWithClient(): Promise<Document[]> {
       name: documentItem.name,
       status: documentItem.status,
       summary: documentItem.summary ?? "",
+      createdBy: documentItem.createdBy ?? "System",
+      createdDate:
+        documentItem.createdDate ??
+        documentItem.createdAt ??
+        new Date().toISOString(),
       createdAt: documentItem.createdAt ?? new Date().toISOString(),
       updatedAt: documentItem.updatedAt ?? new Date().toISOString(),
       deletedAt: null,
@@ -85,6 +90,8 @@ export async function createDocument(
     name: documentItem.name,
     status: documentItem.status,
     summary: documentItem.summary ?? "",
+    createdBy: documentItem.createdBy ?? "Unknown",
+    createdDate: documentItem.createdDate ?? now,
     createdAt: documentItem.createdAt ?? now,
     updatedAt: now,
     deletedAt: null,
@@ -95,7 +102,9 @@ export async function createDocument(
   return { ...payload, id: docRef.id }
 }
 
-export async function updateDocument(documentItem: Document): Promise<Document> {
+export async function updateDocument(
+  documentItem: Document
+): Promise<Document> {
   const payload: Document = {
     ...documentItem,
     updatedAt: new Date().toISOString(),
@@ -127,4 +136,3 @@ export function getDocumentStats(documents: Document[]) {
     published: documents.filter((item) => item.status === "published").length,
   }
 }
-

@@ -13,6 +13,7 @@ import {
   AlertTriangle,
   Users,
   FileText,
+  Contact,
 } from "lucide-react"
 import Link from "next/link"
 import { Logo } from "@/components/logo"
@@ -54,6 +55,11 @@ const data = {
           title: "Tasks",
           url: "/tasks",
           icon: CheckSquare,
+        },
+        {
+          title: "Customers",
+          url: "/customers",
+          icon: Contact,
         },
         {
           title: "Chat",

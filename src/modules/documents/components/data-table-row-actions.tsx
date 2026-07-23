@@ -8,7 +8,7 @@ import {
   Eye,
   FileText,
   MoreHorizontal,
-  Upload,
+  SquarePen,
 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -35,30 +35,19 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet"
 import { Badge } from "@/components/ui/badge"
 import { documentStatuses } from "@/modules/documents/services/document-mock-data"
 import {
@@ -66,8 +55,7 @@ import {
   type Document,
   type DocumentAttachment,
 } from "@/modules/documents/services/types/document-types"
-import { DocumentAttachments } from "./document-attachments"
-import { UploadFilesDialog } from "./upload-files-dialog"
+import { EditDocumentModal } from "./edit-document-modal"
 
 function formatFileSize(bytes: number): string {
   if (bytes === 0) return "0 B"
@@ -77,74 +65,49 @@ function formatFileSize(bytes: number): string {
   return `${size} ${units[i]}`
 }
 
+function formatDate(value: unknown): string {
+  if (!value) return "—"
+  try {
+    if (typeof value === "object" && value !== null && "toDate" in value) {
+      return (value as { toDate: () => Date })
+        .toDate()
+        .toLocaleDateString("vi-VN")
+    }
+    const date = new Date(value as string)
+    if (isNaN(date.getTime())) return "—"
+    return date.toLocaleDateString("vi-VN")
+  } catch {
+    return "—"
+  }
+}
+
 interface DataTableRowActionsProps<TData> {
   row: Row<TData>
   attachments?: DocumentAttachment[]
+  canManage?: boolean
   onUpdateDocument?: (document: Document) => void | Promise<void>
   onDeleteDocument?: (documentId: string) => void | Promise<void>
-  onDeleteFile?: (documentId: string, fileName: string) => void | Promise<void>
   onFilesUploaded?: (documentId: string) => void | Promise<void>
 }
 
 export function DataTableRowActions<TData>({
   row,
   attachments = [],
+  canManage = false,
   onUpdateDocument,
   onDeleteDocument,
-  onDeleteFile,
   onFilesUploaded,
 }: DataTableRowActionsProps<TData>) {
   const parsed = documentSchema.safeParse(row.original)
   const [editOpen, setEditOpen] = React.useState(false)
   const [viewOpen, setViewOpen] = React.useState(false)
   const [deleteOpen, setDeleteOpen] = React.useState(false)
-  const [uploadOpen, setUploadOpen] = React.useState(false)
-  const [draft, setDraft] = React.useState<Document | null>(null)
-  const [isSaving, setIsSaving] = React.useState(false)
-  const [error, setError] = React.useState<string | null>(null)
 
   if (!parsed.success) {
     return null
   }
 
   const documentItem = parsed.data
-
-  function openEditDialog() {
-    setDraft({ ...documentItem })
-    setError(null)
-    setEditOpen(true)
-  }
-
-  async function handleSaveEdit() {
-    if (!draft?.name.trim()) {
-      setError("Tên tài liệu không được để trống")
-      return
-    }
-
-    if (draft.name.length > 100) {
-      setError("Tên tài liệu không được vượt quá 100 ký tự")
-      return
-    }
-
-    try {
-      setIsSaving(true)
-      setError(null)
-      await onUpdateDocument?.({ ...draft, name: draft.name.trim() })
-      toast.success("Cập nhật thành công", {
-        description: `Tài liệu "${draft.name}" đã được cập nhật.`,
-      })
-      setEditOpen(false)
-    } catch (saveError) {
-      toast.error("Lỗi khi cập nhật", {
-        description:
-          saveError instanceof Error
-            ? saveError.message
-            : "Không thể cập nhật tài liệu.",
-      })
-    } finally {
-      setIsSaving(false)
-    }
-  }
 
   async function handleDelete() {
     try {
@@ -184,17 +147,25 @@ export function DataTableRowActions<TData>({
             <Eye className="mr-2 h-4 w-4" />
             Xem chi tiết
           </DropdownMenuItem>
-          <DropdownMenuItem className="cursor-pointer" onClick={openEditDialog}>
-            Chỉnh sửa
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem
-            className="cursor-pointer text-destructive focus:text-destructive"
-            onClick={() => setDeleteOpen(true)}
-          >
-            <AlertTriangle className="mr-2 h-4 w-4" />
-            Xóa
-          </DropdownMenuItem>
+          {canManage && (
+            <>
+              <DropdownMenuItem
+                className="cursor-pointer"
+                onClick={() => setEditOpen(true)}
+              >
+                <SquarePen className="mr-2 h-4 w-4" />
+                Chỉnh sửa
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                className="cursor-pointer text-destructive focus:text-destructive"
+                onClick={() => setDeleteOpen(true)}
+              >
+                <AlertTriangle className="mr-2 h-4 w-4" />
+                Xóa
+              </DropdownMenuItem>
+            </>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
 
@@ -223,20 +194,17 @@ export function DataTableRowActions<TData>({
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* View Details Dialog */}
-      <Dialog open={viewOpen} onOpenChange={setViewOpen}>
-        <DialogContent className="sm:max-w-[525px]">
-          <DialogHeader>
-            <DialogTitle>Chi tiết tài liệu</DialogTitle>
-            <DialogDescription>
+      {/* View Details Sheet */}
+      <Sheet open={viewOpen} onOpenChange={setViewOpen}>
+        <SheetContent side="right" className="sm:max-w-md overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>Chi tiết tài liệu</SheetTitle>
+            <SheetDescription>
               Thông tin chi tiết về tài liệu này.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-1">
-              <p className="text-sm font-medium text-muted-foreground">ID</p>
-              <p className="text-sm font-mono">{documentItem.id}</p>
-            </div>
+            </SheetDescription>
+          </SheetHeader>
+
+          <div className="space-y-5 px-4 pb-6">
             <div className="space-y-1">
               <p className="text-sm font-medium text-muted-foreground">Tên</p>
               <p className="text-sm font-semibold">{documentItem.name}</p>
@@ -248,6 +216,22 @@ export function DataTableRowActions<TData>({
               <Badge variant="outline">
                 {statusLabel?.label ?? documentItem.status}
               </Badge>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">
+                  Người tạo
+                </p>
+                <p className="text-sm">{documentItem.createdBy || "—"}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">
+                  Ngày tạo
+                </p>
+                <p className="text-sm">
+                  {formatDate(documentItem.createdDate)}
+                </p>
+              </div>
             </div>
             {documentItem.summary ? (
               <div className="space-y-1">
@@ -308,151 +292,17 @@ export function DataTableRowActions<TData>({
               )}
             </div>
           </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setViewOpen(false)}
-              className="cursor-pointer"
-            >
-              Đóng
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
 
-      {/* Edit Dialog */}
-      <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent className="sm:max-w-[525px]">
-          <DialogHeader>
-            <DialogTitle>Chỉnh sửa tài liệu</DialogTitle>
-            <DialogDescription>
-              Cập nhật thông tin tài liệu và lưu lại.
-            </DialogDescription>
-          </DialogHeader>
-
-          {draft ? (
-            <div className="space-y-5">
-              {error ? (
-                <p className="text-sm text-destructive">{error}</p>
-              ) : null}
-              <div className="space-y-2">
-                <Label htmlFor={`doc-name-${documentItem.id}`}>
-                  Tên tài liệu <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id={`doc-name-${documentItem.id}`}
-                  value={draft.name}
-                  maxLength={100}
-                  onChange={(event) =>
-                    setDraft((current) =>
-                      current
-                        ? { ...current, name: event.target.value }
-                        : current
-                    )
-                  }
-                />
-                <span className="text-xs text-muted-foreground">
-                  {draft.name.length}/100
-                </span>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Trạng thái</Label>
-                <Select
-                  value={draft.status}
-                  onValueChange={(value: "draft" | "published") =>
-                    setDraft((current) =>
-                      current ? { ...current, status: value } : current
-                    )
-                  }
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {documentStatuses.map((status) => (
-                      <SelectItem key={status.value} value={status.value}>
-                        <div className="flex items-center">
-                          {status.icon && (
-                            <status.icon className="mr-2 h-4 w-4 text-muted-foreground" />
-                          )}
-                          {status.label}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Tóm tắt</Label>
-                <Textarea
-                  value={draft.summary ?? ""}
-                  placeholder="Nhập tóm tắt tài liệu..."
-                  rows={4}
-                  onChange={(event) =>
-                    setDraft((current) =>
-                      current
-                        ? { ...current, summary: event.target.value }
-                        : current
-                    )
-                  }
-                />
-              </div>
-
-              {/* Attachments in edit dialog */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label>File đính kèm</Label>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="cursor-pointer"
-                    onClick={() => {
-                      setEditOpen(false)
-                      setTimeout(() => setUploadOpen(true), 100)
-                    }}
-                  >
-                    <Upload className="mr-2 h-4 w-4" />
-                    Upload
-                  </Button>
-                </div>
-                <DocumentAttachments
-                  attachments={attachments}
-                  onDeleteFile={
-                    onDeleteFile
-                      ? (fileName) => onDeleteFile(documentItem.id, fileName)
-                      : undefined
-                  }
-                />
-              </div>
-            </div>
-          ) : null}
-
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setEditOpen(false)}
-              disabled={isSaving}
-            >
-              Hủy
-            </Button>
-            <Button onClick={handleSaveEdit} disabled={isSaving}>
-              {isSaving ? "Đang lưu..." : "Lưu thay đổi"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Upload Files Dialog */}
-      <UploadFilesDialog
-        open={uploadOpen}
-        onOpenChange={setUploadOpen}
-        documentId={documentItem.id}
-        onUploaded={async () => {
-          await onFilesUploaded?.(documentItem.id)
-        }}
+      {/* Edit Dialog (single-step: info + add/remove attachments) */}
+      <EditDocumentModal
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        document={documentItem}
+        attachments={attachments}
+        onUpdateDocument={onUpdateDocument}
+        onFilesUploaded={onFilesUploaded}
       />
     </>
   )

@@ -1,0 +1,5 @@
+- Every service function wraps a try/catch and returns a stable `{ success, message?, data? }` shape, logging warnings/errors before returning mock/fallback data.
+- Zod schemas in `types/user-types.ts` define both domain models and separate form/payload schemas, with `z.infer` used to derive TypeScript types from them.
+- Mock data is loaded from JSON fixtures under `services/data/` and validated through `.array().parse(...)` against the matching Zod schema before export.
+- Bulk operations use `writeBatch(db)` with `{ merge: true }` set calls, and idempotent composite ids like `ur-${uid}-${roleId}` prevent duplicate assignments.
+- Read functions accept a default-fallback array argument (e.g. `getFirestoreCollection<Role>(ROLES_COLLECTION, roleMockData)`) so the caller never needs to handle null reads.

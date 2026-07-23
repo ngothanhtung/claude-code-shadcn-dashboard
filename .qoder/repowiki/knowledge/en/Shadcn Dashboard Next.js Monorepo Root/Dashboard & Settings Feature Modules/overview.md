@@ -1,0 +1,1 @@
+Three sibling feature modules (dashboard-1, dashboard-2, settings) each owning their React components and a thin services layer that resolves data from Firestore or bundled JSON fixtures.

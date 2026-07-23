@@ -1,0 +1,1 @@
+No build or test scripts are defined inside this module. Mock data lives in `services/data/calendars.json`, `services/data/events.json`, and `services/data/event-dates.json`; these files are imported directly by `calendar-mock-data.ts` and transformed into typed objects at module load time.

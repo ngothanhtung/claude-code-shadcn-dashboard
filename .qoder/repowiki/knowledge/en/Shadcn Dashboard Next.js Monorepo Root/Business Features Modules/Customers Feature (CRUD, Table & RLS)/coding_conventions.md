@@ -1,0 +1,5 @@
+- Row-Level Security is enforced at the service boundary: every mutating function calls `getCurrentUserId()` first and attaches the resulting `userId` to the written record rather than trusting caller input.
+- A single source-of-truth Zod schema (`customerSchema` in `types/customer-types.ts`) is imported everywhere; derived types use `z.infer<typeof customerSchema>` instead of hand-written interfaces.
+- Dropdown options (services, statuses, priorities) are declared once in `customer-mock-data.ts` as `{ value, label, icon? }` arrays and reused by both the mock seed data and the Add Customer modal.
+- Table-related UI is split into small focused components (`data-table-toolbar`, `data-table-pagination`, `data-table-row-actions`, `data-table-view-options`, `data-table-column-header`) that all receive the same `table` instance from `useReactTable`.
+- Client components opt into interactivity with the `'use client'` directive at the top of the file and expose behavior through optional callback props (e.g. `onAddCustomer`, `onSeedCustomers`) rather than importing services directly.

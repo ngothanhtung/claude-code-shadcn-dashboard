@@ -20,16 +20,20 @@ import { DataTableViewOptions } from "./data-table-view-options"
 
 interface DataTableToolbarProps<TData> {
   table: Table<TData>
+  canManage?: boolean
   onAddDocument?: (
     document: Omit<Document, "id">
   ) => Promise<Document | void> | void
+  onFilesUploaded?: (documentId: string) => void | Promise<void>
   onSeedDocuments?: () => void | Promise<void>
   isSeedingDocuments?: boolean
 }
 
 export function DataTableToolbar<TData>({
   table,
+  canManage = false,
   onAddDocument,
+  onFilesUploaded,
   onSeedDocuments,
   isSeedingDocuments,
 }: DataTableToolbarProps<TData>) {
@@ -83,9 +87,7 @@ export function DataTableToolbar<TData>({
 
           <Input
             placeholder="Tìm tài liệu..."
-            value={
-              (table.getColumn("name")?.getFilterValue() as string) ?? ""
-            }
+            value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
             onChange={(event) =>
               table.getColumn("name")?.setFilterValue(event.target.value)
             }
@@ -104,20 +106,27 @@ export function DataTableToolbar<TData>({
         </div>
 
         <div className="flex items-center space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="cursor-pointer"
-            onClick={onSeedDocuments}
-            disabled={!onSeedDocuments || isSeedingDocuments}
-          >
-            <Database className="h-4 w-4" />
-            <span className="hidden lg:block">
-              {isSeedingDocuments ? "Đang seed..." : "Seed Data"}
-            </span>
-          </Button>
+          {canManage && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="cursor-pointer"
+              onClick={onSeedDocuments}
+              disabled={!onSeedDocuments || isSeedingDocuments}
+            >
+              <Database className="h-4 w-4" />
+              <span className="hidden lg:block">
+                {isSeedingDocuments ? "Đang seed..." : "Seed Data"}
+              </span>
+            </Button>
+          )}
           <DataTableViewOptions table={table} />
-          <AddDocumentModal onAddDocument={onAddDocument} />
+          {canManage && (
+            <AddDocumentModal
+              onAddDocument={onAddDocument}
+              onFilesUploaded={onFilesUploaded}
+            />
+          )}
         </div>
       </div>
     </div>

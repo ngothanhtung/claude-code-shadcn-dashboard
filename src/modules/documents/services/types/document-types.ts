@@ -6,9 +6,14 @@ export const documentStatusSchema = z.enum(DOCUMENT_STATUS_VALUES)
 
 export const documentSchema = z.object({
   id: z.string(),
-  name: z.string().min(1, "Name is required").max(100, "Name must be at most 100 characters"),
+  name: z
+    .string()
+    .min(1, "Name is required")
+    .max(100, "Name must be at most 100 characters"),
   status: documentStatusSchema,
   summary: z.string().optional().default(""),
+  createdBy: z.string().optional(),
+  createdDate: z.unknown().optional(),
   createdAt: z.unknown().optional(),
   updatedAt: z.unknown().optional(),
   deletedAt: z.unknown().nullable().optional(),
@@ -138,9 +143,7 @@ export function isExtensionAllowed(fileName: string): boolean {
   const ext = getFileExtension(fileName)
   if (!ext) return false
 
-  if (
-    (BLOCKED_EXTENSIONS as readonly string[]).includes(ext)
-  ) {
+  if ((BLOCKED_EXTENSIONS as readonly string[]).includes(ext)) {
     return false
   }
 

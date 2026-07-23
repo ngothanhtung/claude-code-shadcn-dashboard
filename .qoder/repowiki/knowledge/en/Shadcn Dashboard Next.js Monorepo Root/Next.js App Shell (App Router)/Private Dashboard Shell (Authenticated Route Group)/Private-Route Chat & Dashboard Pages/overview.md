@@ -1,0 +1,1 @@
+Next.js App Router pages under the (private) route group that compose chat and two dashboard views from shared feature modules.

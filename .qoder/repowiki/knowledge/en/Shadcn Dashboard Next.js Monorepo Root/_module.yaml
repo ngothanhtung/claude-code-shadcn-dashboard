@@ -1,0 +1,22 @@
+schema_version: 1
+module_path: ""
+title: Shadcn Dashboard Next.js Monorepo Root
+scope:
+    - CLAUDE.md
+    - package.json
+    - next.config.ts
+    - tsconfig.json
+    - components.json
+    - firestore.rules
+    - eslint.config.mjs
+    - postcss.config.mjs
+    - .prettierrc
+    - .editorconfig
+    - .gitignore
+    - .env.example
+    - .gitattributes
+    - .prettierignore
+    - package-lock.json
+source_files: []
+depends_on: []
+related_to: []

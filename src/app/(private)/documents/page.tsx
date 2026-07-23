@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { ArrowUp, FileEdit, FileText, File } from "lucide-react"
+import { useSession } from "next-auth/react"
 import { toast } from "sonner"
 
 import {
@@ -11,6 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { hasDocumentManagerAccess } from "@/lib/auth/permissions"
 import { getDocumentColumns } from "@/modules/documents/components/columns"
 import { DataTable } from "@/modules/documents/components/data-table"
 import {
@@ -21,16 +23,16 @@ import {
   seedDocumentsWithClient,
   updateDocument,
 } from "@/modules/documents/services/document-services"
-import {
-  deleteDocumentFile,
-  listDocumentAttachments,
-} from "@/modules/documents/services/document-file-services"
+import { listDocumentAttachments } from "@/modules/documents/services/document-file-services"
 import type {
   Document,
   DocumentAttachment,
 } from "@/modules/documents/services/types/document-types"
 
 export default function DocumentPage() {
+  const { data: session } = useSession()
+  const canManageDocuments = hasDocumentManagerAccess(session?.user)
+
   const [documents, setDocuments] = useState<Document[]>([])
   const [attachmentsMap, setAttachmentsMap] = useState<
     Record<string, DocumentAttachment[]>
@@ -50,16 +52,36 @@ export default function DocumentPage() {
     } catch (err) {
       console.error(
         `[Documents] Failed to list attachments for ${documentId}:`,
-        err,
+        err
       )
       setAttachmentsMap((prev) => ({ ...prev, [documentId]: [] }))
     }
   }, [])
 
+  const refreshAllAttachments = useCallback(async (docs: Document[]) => {
+    const entries = await Promise.allSettled(
+      docs.map(
+        async (d) => [d.id, await listDocumentAttachments(d.id)] as const
+      )
+    )
+    setAttachmentsMap((prev) => {
+      const next = { ...prev }
+      entries.forEach((entry) => {
+        if (entry.status === "fulfilled") {
+          next[entry.value[0]] = entry.value[1]
+        }
+      })
+      return next
+    })
+  }, [])
+
   useEffect(() => {
     const loadDocuments = async () => {
       try {
-        await refreshDocuments()
+        const documentList = await getDocuments()
+        setDocuments(documentList)
+        // Load attachments for all documents so the View Details dialog can show them.
+        await refreshAllAttachments(documentList)
       } catch (error) {
         console.error("Failed to load documents:", error)
         toast.error("Lỗi khi tải danh sách tài liệu", {
@@ -74,56 +96,79 @@ export default function DocumentPage() {
     }
 
     loadDocuments()
-  }, [refreshDocuments])
+  }, [refreshAllAttachments])
 
   const handleAddDocument = useCallback(
     async (newDocument: Omit<Document, "id">): Promise<Document> => {
-      const created = await createDocument(newDocument)
+      if (!canManageDocuments) {
+        throw new Error(
+          "Bạn không có quyền tạo tài liệu. Yêu cầu vai trò Document Manager."
+        )
+      }
+      const now = new Date().toISOString()
+      const created = await createDocument({
+        ...newDocument,
+        createdBy: session?.user?.name || session?.user?.email || "Unknown",
+        createdDate: now,
+      })
       await refreshDocuments()
       return created
     },
-    [refreshDocuments]
+    [canManageDocuments, refreshDocuments, session]
   )
 
   const handleUpdateDocument = useCallback(
     async (documentItem: Document) => {
+      if (!canManageDocuments) {
+        toast.error("Không có quyền cập nhật", {
+          description:
+            "Bạn không có quyền chỉnh sửa tài liệu. Yêu cầu vai trò Document Manager.",
+        })
+        return
+      }
       await updateDocument(documentItem)
       setDocuments((prev) =>
         prev.map((item) => (item.id === documentItem.id ? documentItem : item))
       )
     },
-    []
+    [canManageDocuments]
   )
 
-  const handleDeleteDocument = useCallback(async (documentId: string) => {
-    await deleteDocument(documentId)
-    setDocuments((prev) => prev.filter((item) => item.id !== documentId))
-    setAttachmentsMap((prev) => {
-      const next = { ...prev }
-      delete next[documentId]
-      return next
-    })
-  }, [])
-
-  const handleDeleteFile = useCallback(
-    async (documentId: string, fileName: string) => {
-      await deleteDocumentFile(documentId, fileName)
-      await refreshAttachments(documentId)
-      toast.success("Xóa file thành công", {
-        description: `File "${fileName}" đã được xóa.`,
+  const handleDeleteDocument = useCallback(
+    async (documentId: string) => {
+      if (!canManageDocuments) {
+        toast.error("Không có quyền xóa", {
+          description:
+            "Bạn không có quyền xóa tài liệu. Yêu cầu vai trò Document Manager.",
+        })
+        return
+      }
+      await deleteDocument(documentId)
+      setDocuments((prev) => prev.filter((item) => item.id !== documentId))
+      setAttachmentsMap((prev) => {
+        const next = { ...prev }
+        delete next[documentId]
+        return next
       })
     },
-    [refreshAttachments],
+    [canManageDocuments]
   )
 
   const handleFilesUploaded = useCallback(
     async (documentId: string) => {
       await refreshAttachments(documentId)
     },
-    [refreshAttachments],
+    [refreshAttachments]
   )
 
   const handleSeedDocuments = useCallback(async () => {
+    if (!canManageDocuments) {
+      toast.error("Không có quyền seed dữ liệu", {
+        description:
+          "Bạn không có quyền seed dữ liệu. Yêu cầu vai trò Document Manager.",
+      })
+      return
+    }
     try {
       setIsSeedingDocuments(true)
       const seededDocuments = await seedDocumentsWithClient()
@@ -142,21 +187,21 @@ export default function DocumentPage() {
     } finally {
       setIsSeedingDocuments(false)
     }
-  }, [])
+  }, [canManageDocuments])
 
   const documentColumns = useMemo(
     () =>
       getDocumentColumns({
         attachmentsMap,
+        canManage: canManageDocuments,
         onUpdateDocument: handleUpdateDocument,
         onDeleteDocument: handleDeleteDocument,
-        onDeleteFile: handleDeleteFile,
         onFilesUploaded: handleFilesUploaded,
       }),
     [
       attachmentsMap,
+      canManageDocuments,
       handleDeleteDocument,
-      handleDeleteFile,
       handleFilesUploaded,
       handleUpdateDocument,
     ]
@@ -193,8 +238,8 @@ export default function DocumentPage() {
           <div className="text-center p-8">
             <h3 className="text-lg font-semibold mb-2">Documents Dashboard</h3>
             <p className="text-muted-foreground">
-              Vui lòng sử dụng màn hình lớn hơn để xem đầy đủ giao diện quản
-              lý tài liệu.
+              Vui lòng sử dụng màn hình lớn hơn để xem đầy đủ giao diện quản lý
+              tài liệu.
             </p>
           </div>
         </div>
@@ -285,7 +330,9 @@ export default function DocumentPage() {
             <DataTable
               data={documents}
               columns={documentColumns}
+              canManage={canManageDocuments}
               onAddDocument={handleAddDocument}
+              onFilesUploaded={handleFilesUploaded}
               onSeedDocuments={handleSeedDocuments}
               isSeedingDocuments={isSeedingDocuments}
             />
