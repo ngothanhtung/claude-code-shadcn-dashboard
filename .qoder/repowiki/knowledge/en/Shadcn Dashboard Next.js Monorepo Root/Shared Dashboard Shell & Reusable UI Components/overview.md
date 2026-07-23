@@ -1,1 +1,0 @@
-Client-side React components that compose the dashboard chrome (sidebar, header, footer), theming, auth provider, and reusable visual building blocks consumed by pages.

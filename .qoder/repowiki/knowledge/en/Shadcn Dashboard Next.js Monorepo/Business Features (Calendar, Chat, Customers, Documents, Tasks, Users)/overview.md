@@ -1,0 +1,1 @@
+Top-level grouping of six independent React feature modules that each own their shadcn/TanStack UI and Firestore-backed services behind a uniform mock/live adapter contract.

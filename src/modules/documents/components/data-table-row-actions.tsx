@@ -55,6 +55,7 @@ import {
   type Document,
   type DocumentAttachment,
 } from "@/modules/documents/services/types/document-types"
+import type { Folder } from "@/modules/documents/services/types/folder-types"
 import { EditDocumentModal } from "./edit-document-modal"
 
 function formatFileSize(bytes: number): string {
@@ -84,6 +85,7 @@ function formatDate(value: unknown): string {
 interface DataTableRowActionsProps<TData> {
   row: Row<TData>
   attachments?: DocumentAttachment[]
+  folders?: Folder[]
   canManage?: boolean
   onUpdateDocument?: (document: Document) => void | Promise<void>
   onDeleteDocument?: (documentId: string) => void | Promise<void>
@@ -93,6 +95,7 @@ interface DataTableRowActionsProps<TData> {
 export function DataTableRowActions<TData>({
   row,
   attachments = [],
+  folders = [],
   canManage = false,
   onUpdateDocument,
   onDeleteDocument,
@@ -301,6 +304,7 @@ export function DataTableRowActions<TData>({
         onOpenChange={setEditOpen}
         document={documentItem}
         attachments={attachments}
+        folders={folders}
         onUpdateDocument={onUpdateDocument}
         onFilesUploaded={onFilesUploaded}
       />

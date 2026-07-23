@@ -62,6 +62,7 @@ export async function seedDocumentsWithClient(): Promise<Document[]> {
       name: documentItem.name,
       status: documentItem.status,
       summary: documentItem.summary ?? "",
+      folderId: documentItem.folderId ?? null,
       createdBy: documentItem.createdBy ?? "System",
       createdDate:
         documentItem.createdDate ??
@@ -90,6 +91,7 @@ export async function createDocument(
     name: documentItem.name,
     status: documentItem.status,
     summary: documentItem.summary ?? "",
+    folderId: documentItem.folderId ?? null,
     createdBy: documentItem.createdBy ?? "Unknown",
     createdDate: documentItem.createdDate ?? now,
     createdAt: documentItem.createdAt ?? now,

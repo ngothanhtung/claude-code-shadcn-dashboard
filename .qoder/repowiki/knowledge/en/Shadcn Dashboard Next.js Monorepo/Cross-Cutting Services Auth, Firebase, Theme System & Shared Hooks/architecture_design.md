@@ -1,0 +1,10 @@
+Organized as a flat set of leaf packages with strict inward dependency direction — nothing in this module imports from feature pages:
+- `lib/auth/` — NextAuth integration layer: `admin-api.ts` wraps `auth()` + `hasAdminAccess` into a reusable `getAdminApiErrorResponse` helper for server routes; `permissions.ts` is the single source of truth for role constants (`ADMIN_ROLE_ID`, `DOCUMENT_MANAGER_ROLE_ID`) and privilege predicates (`hasAdminAccess`, `hasDocumentManagerAccess`); `user-access.ts` resolves Firestore-backed authorization via the admin SDK.
+- `lib/firebase/` — thin SDK wrappers: `client.ts` bootstraps a singleton `app`/`auth`/`db`/`storage` after validating all `NEXT_PUBLIC_FIREBASE_*` env vars (fails fast at import time); `auth.ts` exposes user-facing operations (sign-in, sign-up, profile, notifications, account deletion) using the client SDK; `firestore-query.ts` provides generic typed collection fetchers with local-fallback behavior; `admin.ts` caches Admin SDK instances and supports both split env vars and full service-account JSON.
+- `config/` — static theme metadata (`theme-customizer-constants.ts`, `theme-data.ts`) consumed by the theme manager.
+- `hooks/` — pure React hooks built on top of contexts/config: `use-theme-manager.ts` orchestrates CSS variable injection, brand-color extraction, and preset/imported theme application; `use-theme.ts` / `use-sidebar-config.ts` / `use-mobile.ts` / `use-fullscreen.ts` / `use-circular-transition.ts` provide UI state.
+- `contexts/` — `theme-context.ts` defines the `ThemeProviderContext` contract; `sidebar-context.tsx` holds sidebar layout state.
+- `utils/` — theme preset factories (`shadcn-ui-theme-presets.ts`, `tweakcn-theme-presets.ts`).
+- `types/` — shared interfaces (`ThemePreset`, `ColorTheme`, `ImportedTheme`, `BrandColor`, etc.) plus NextAuth declaration augmentation (`next-auth.d.ts`).
+
+Dependency direction is strictly inward: hooks → contexts/config/types; lib/* → firebase client; auth layer → permissions + firebase admin.

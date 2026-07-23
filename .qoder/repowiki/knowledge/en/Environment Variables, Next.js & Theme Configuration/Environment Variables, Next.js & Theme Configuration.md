@@ -3,21 +3,21 @@ kind: configuration_system
 name: Environment Variables, Next.js & Theme Configuration
 category: configuration_system
 scope:
-  - "**"
+    - '**'
 source_files:
-  - .env.example
-  - next.config.ts
-  - components.json
-  - src/auth.config.ts
-  - src/config/theme-customizer-constants.ts
-  - src/config/theme-data.ts
-  - src/utils/shadcn-ui-theme-presets.ts
-  - src/utils/tweakcn-theme-presets.ts
+    - .env.example
+    - next.config.ts
+    - components.json
+    - src/auth.config.ts
+    - src/config/theme-customizer-constants.ts
+    - src/config/theme-data.ts
+    - src/utils/shadcn-ui-theme-presets.ts
+    - src/utils/tweakcn-theme-presets.ts
 ---
 
 This repository uses a lightweight, file-based configuration approach centered on three layers:
 
-1. Runtime secrets via Next.js environment variables — All external service credentials are declared in .env.example and consumed through NEXT*PUBLIC*_ (client-side) or server-only variables. The app wires Firebase client SDK keys (NEXT*PUBLIC_FIREBASE*_), NextAuth secret (AUTH*SECRET), Firebase Admin SDK credentials (FIREBASE_ADMIN*\*), and Telegram bot tokens (TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID). There is no runtime config loader; values are read directly from process.env at build/start time.
+1. Runtime secrets via Next.js environment variables — All external service credentials are declared in .env.example and consumed through NEXT_PUBLIC_* (client-side) or server-only variables. The app wires Firebase client SDK keys (NEXT_PUBLIC_FIREBASE_*), NextAuth secret (AUTH_SECRET), Firebase Admin SDK credentials (FIREBASE_ADMIN_*), and Telegram bot tokens (TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID). There is no runtime config loader; values are read directly from process.env at build/start time.
 
 2. Next.js application configuration — next.config.ts holds build-time settings: experimental package import optimization for lucide-react/@radix-ui/react-icons, Turbopack enablement, image remotePatterns for shadcn.com and Unsplash, security headers (X-Frame-Options, X-Content-Type-Options, Referrer-Policy), and a /home to /dashboard redirect. No feature flags or dynamic toggles exist here.
 
@@ -30,9 +30,8 @@ This repository uses a lightweight, file-based configuration approach centered o
 4. Auth configuration split — src/auth.config.ts defines NextAuth routing pages and the authorized callback policy (redirects logged-in users away from auth pages, allows landing page, requires login everywhere else); actual providers are registered in src/auth.ts.
 
 Conventions developers should follow:
-
-- Add new runtime secrets to .env.example and consume them via process.env.X; use NEXT*PUBLIC* prefix only when the value must reach the browser.
-- New UI themes belong in src/utils/\*-theme-presets.ts as entries in the Record<string, ThemePreset> map with both light and dark style blocks; they will be auto-discovered by src/config/theme-data.ts.
+- Add new runtime secrets to .env.example and consume them via process.env.X; use NEXT_PUBLIC_ prefix only when the value must reach the browser.
+- New UI themes belong in src/utils/*-theme-presets.ts as entries in the Record<string, ThemePreset> map with both light and dark style blocks; they will be auto-discovered by src/config/theme-data.ts.
 - New sidebar/customizer options go in src/config/theme-customizer-constants.ts and must match the types in src/types/theme-customizer.ts.
 - Keep Next.js-level redirects/headers in next.config.ts; do not bake per-environment branches there.
 - Auth policy changes live in src/auth.config.ts; provider wiring stays in src/auth.ts.

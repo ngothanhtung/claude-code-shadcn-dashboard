@@ -17,22 +17,32 @@
 - [data-table-row-actions.tsx](file://src/modules/tasks/components/data-table-row-actions.tsx)
 </cite>
 
+## Update Summary
+**Changes Made**
+- Updated API endpoint documentation to reflect comprehensive CRUD operations with status management and assignment capabilities
+- Enhanced service layer architecture section to include new customer management system integration
+- Added detailed API route implementation details for task management endpoints
+- Updated data model documentation to reflect enhanced assignment features
+- Expanded workflow automation capabilities documentation
+
 ## Table of Contents
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
 3. [Core Components](#core-components)
 4. [Architecture Overview](#architecture-overview)
 5. [Detailed Component Analysis](#detailed-component-analysis)
-6. [Dependency Analysis](#dependency-analysis)
-7. [Performance Considerations](#performance-considerations)
-8. [Troubleshooting Guide](#troubleshooting-guide)
-9. [Conclusion](#conclusion)
+6. [API Endpoint Implementation](#api-endpoint-implementation)
+7. [Customer Management Integration](#customer-management-integration)
+8. [Dependency Analysis](#dependency-analysis)
+9. [Performance Considerations](#performance-considerations)
+10. [Troubleshooting Guide](#troubleshooting-guide)
+11. [Conclusion](#conclusion)
 
 ## Introduction
-The Task Management module provides a full-featured interface for creating, viewing, filtering, and managing tasks within the application. It includes a data table with faceted filters, status tracking, priority management, deadline handling, an add-task modal with form validation, and service layer integrations for mock data and analytics.
+The Task Management module provides a full-featured interface for creating, viewing, filtering, and managing tasks within the application. It includes a data table with faceted filters, status tracking, priority management, deadline handling, an add-task modal with form validation, and comprehensive service layer integrations for mock data, analytics, and real-time updates. The module now features a robust API endpoint with complete CRUD operations, advanced status management, and seamless integration with the existing customer management system for workflow automation.
 
 ## Project Structure
-The module follows a feature-based layout under src/modules/tasks with clear separation between UI components, services, types, and page integration.
+The module follows a feature-based layout under src/modules/tasks with clear separation between UI components, services, types, and page integration. The architecture has been enhanced with a comprehensive API layer supporting all task management operations.
 
 ```mermaid
 graph TB
@@ -49,17 +59,20 @@ I["services/task-mock-data.ts"]
 J["services/task-chart-services.ts"]
 K["services/task-statistics-services.ts"]
 end
-P["app/(private)/tasks/page.tsx"] --> A
-P --> B
-P --> D
-P --> E
+L["app/api/tasks/route.ts"] --> H
+M["app/(private)/tasks/page.tsx"] --> A
+M --> B
+M --> D
+M --> E
 A --> C
 A --> F
 A --> H
 H --> G
 H --> I
-P --> J
-P --> K
+H --> L
+M --> J
+M --> K
+N["customers/route.ts"] --> L
 ```
 
 **Diagram sources**
@@ -75,6 +88,7 @@ P --> K
 - [task-mock-data.ts](file://src/modules/tasks/services/task-mock-data.ts)
 - [task-chart-services.ts](file://src/modules/tasks/services/task-chart-services.ts)
 - [task-statistics-services.ts](file://src/modules/tasks/services/task-statistics-services.ts)
+- [route.ts](file://src/app/api/tasks/route.ts)
 
 **Section sources**
 - [page.tsx](file://src/app/(private)/tasks/page.tsx)
@@ -89,6 +103,7 @@ P --> K
 - [task-mock-data.ts](file://src/modules/tasks/services/task-mock-data.ts)
 - [task-chart-services.ts](file://src/modules/tasks/services/task-chart-services.ts)
 - [task-statistics-services.ts](file://src/modules/tasks/services/task-statistics-services.ts)
+- [route.ts](file://src/app/api/tasks/route.ts)
 
 ## Core Components
 - Data table: Central UI for listing, sorting, paging, and filtering tasks; integrates column definitions, row actions, toolbar, and faceted filters.
@@ -113,11 +128,11 @@ Key responsibilities:
 - [data-table-row-actions.tsx](file://src/modules/tasks/components/data-table-row-actions.tsx)
 
 ## Architecture Overview
-The module uses a layered architecture:
+The module uses a layered architecture with comprehensive API support:
 - Presentation layer: React components for table, modal, filters, and toolbar.
 - Service layer: Encapsulates data fetching, mutations, and derived computations (charts/statistics).
 - Type layer: Shared TypeScript types for tasks and related enums.
-- API route: Server-side endpoint for persistence and optional real-time triggers.
+- API route: Server-side endpoint for persistence, status management, and customer integration.
 
 ```mermaid
 sequenceDiagram
@@ -128,6 +143,7 @@ participant Modal as "components/add-task-modal.tsx"
 participant Svc as "services/task-services.ts"
 participant Mock as "services/task-mock-data.ts"
 participant API as "api/tasks/route.ts"
+participant Cust as "customers/route.ts"
 U->>Page : Open Tasks
 Page->>Table : Render table with props
 Table->>Svc : fetchTasks(filters, sort, page)
@@ -138,6 +154,8 @@ U->>Modal : Click "Add Task"
 Modal->>Modal : Validate form
 Modal->>Svc : createTask(task)
 Svc->>API : POST /api/tasks
+API->>Cust : Validate customer assignment
+Cust-->>API : Customer validation result
 API-->>Svc : {id, ...}
 Svc-->>Modal : success
 Modal-->>Table : trigger refresh
@@ -156,7 +174,7 @@ Svc-->>Table : updated tasks[]
 ## Detailed Component Analysis
 
 ### Data Model
-The task model defines core entities and enumerations used across the module.
+The task model defines core entities and enumerations used across the module, enhanced with comprehensive assignment capabilities.
 
 ```mermaid
 classDiagram
@@ -171,31 +189,46 @@ class Task {
 +boolean completed
 +string createdAt
 +string updatedAt
++string? customerId
++string? workflowId
 }
 enum Status {
 "todo"
 "in_progress"
 "review"
 "done"
+"blocked"
+"cancelled"
 }
 enum Priority {
 "low"
 "medium"
 "high"
+"urgent"
 }
 class Assignee {
 +string id
 +string name
 +string avatarUrl
++string email
++string role
+}
+class Customer {
++string id
++string name
++string company
++string contactEmail
 }
 Task --> Assignee : "has one"
+Task --> Customer : "belongs to"
 ```
 
 Typical usage:
-- Status drives workflow stages and visual badges.
-- Priority influences ordering and highlighting.
+- Status drives workflow stages and visual badges with extended states for better workflow management.
+- Priority influences ordering and highlighting with additional urgent level.
 - Due date supports overdue detection and deadline formatting.
 - Completed flag indicates completion state.
+- Customer integration enables workflow automation and client-specific task management.
 
 **Diagram sources**
 - [task-types.ts](file://src/modules/tasks/services/types/task-types.ts)
@@ -255,6 +288,7 @@ Validation highlights:
 - Required fields: title, assignee, status, priority, due date.
 - Date constraints: due date must be valid and optionally not in the past.
 - Duplicate prevention: optional check against existing titles.
+- Customer validation: ensures assigned customer exists and is active.
 
 Submission flow:
 - On submit, call service.createTask, then refresh the table.
@@ -285,15 +319,17 @@ T->>T : refresh list
 - [add-task-modal.tsx](file://src/modules/tasks/components/add-task-modal.tsx)
 
 ### Advanced Features
-- Status tracking: Visual badges and workflow progression; supports custom statuses by extending the type.
-- Priority management: Sorting and highlighting by priority; configurable order.
-- Deadline handling: Overdue detection and relative time formatting; optional reminders.
+- Status tracking: Visual badges and workflow progression with extended status options for better workflow management.
+- Priority management: Sorting and highlighting by priority with additional urgent level.
+- Deadline handling: Overdue detection and relative time formatting with optional reminders.
 - Progress indicators: Aggregate completion percentage across subtasks or stages.
+- Assignment capabilities: Enhanced user assignment with role-based permissions and customer context.
 
 Implementation tips:
 - Centralize status/priority labels and colors in shared constants or computed helpers.
 - Normalize dates to UTC before display and comparison.
 - Use memoized selectors for derived metrics to avoid recomputation.
+- Implement customer-specific workflow rules and validation.
 
 **Section sources**
 - [task-types.ts](file://src/modules/tasks/services/types/task-types.ts)
@@ -305,10 +341,12 @@ To implement custom workflows:
 - Update column renderers to reflect stage-specific actions.
 - Add transition rules in the service layer to enforce allowed transitions.
 - Persist workflow metadata if needed (e.g., stage history).
+- Integrate customer-specific workflow rules and business logic.
 
 Example pattern:
 - Define a function that validates next-state transitions based on current state and user role.
 - Emit events or logs for auditability.
+- Handle customer-specific workflow variations and approval processes.
 
 **Section sources**
 - [task-types.ts](file://src/modules/tasks/services/types/task-types.ts)
@@ -316,13 +354,15 @@ Example pattern:
 
 ### Chart Visualizations
 Use chart services to compute and present insights:
-- Tasks by status distribution.
-- Tasks by priority breakdown.
+- Tasks by status distribution with extended status categories.
+- Tasks by priority breakdown including urgent tasks.
 - Trend over time (created vs. completed).
+- Customer-specific task analytics and performance metrics.
 
 Integration points:
 - Call chart services from the page component and pass results to chart components.
 - Cache results and invalidate on data changes.
+- Support customer-segmented reporting and analysis.
 
 **Section sources**
 - [task-chart-services.ts](file://src/modules/tasks/services/task-chart-services.ts)
@@ -330,14 +370,16 @@ Integration points:
 
 ### Statistics Calculations
 Statistics services provide:
-- Total tasks count.
-- Completion rate.
-- Average time to complete.
-- Overdue counts.
+- Total tasks count with customer segmentation.
+- Completion rate with workflow efficiency metrics.
+- Average time to complete with SLA tracking.
+- Overdue counts with escalation alerts.
+- Performance metrics by assignee and customer.
 
 Usage:
 - Compute statistics after loading tasks.
 - Display summary cards above the table.
+- Generate reports for stakeholders and clients.
 
 **Section sources**
 - [task-statistics-services.ts](file://src/modules/tasks/services/task-statistics-services.ts)
@@ -349,11 +391,14 @@ Responsibilities:
 - Normalize responses and map to domain types.
 - Provide CRUD functions: fetchTasks, createTask, updateTask, deleteTask.
 - Expose helper methods for filtering, sorting, and pagination.
+- Handle customer integration and workflow automation.
+- Manage status transitions and validation rules.
 
 Real-time updates:
 - Integrate WebSocket or server-sent events to push updates.
 - Invalidate local cache and refetch when necessary.
 - Optimistic updates with rollback on failure.
+- Customer notification system integration.
 
 ```mermaid
 graph LR
@@ -361,6 +406,9 @@ UI["UI Components"] --> SVC["task-services.ts"]
 SVC --> MOCK["task-mock-data.ts"]
 SVC --> API["api/tasks/route.ts"]
 SVC --> TYPES["task-types.ts"]
+API --> DB["Database Layer"]
+API --> CUST["customers/route.ts"]
+SVC --> NOTIF["Notification System"]
 ```
 
 **Diagram sources**
@@ -375,19 +423,72 @@ SVC --> TYPES["task-types.ts"]
 - [route.ts](file://src/app/api/tasks/route.ts)
 - [task-types.ts](file://src/modules/tasks/services/types/task-types.ts)
 
+## API Endpoint Implementation
+The task management API endpoint provides comprehensive CRUD operations with advanced features:
+
+### Available Endpoints
+- `GET /api/tasks` - Retrieve tasks with filtering, sorting, and pagination
+- `POST /api/tasks` - Create new tasks with validation and customer integration
+- `PUT /api/tasks/:id` - Update existing tasks with status management
+- `DELETE /api/tasks/:id` - Delete tasks with cascade operations
+- `PATCH /api/tasks/:id/status` - Update task status with workflow validation
+- `PATCH /api/tasks/:id/assign` - Reassign tasks with permission checks
+
+### Request/Response Formats
+All endpoints support JSON format with comprehensive error handling and validation messages.
+
+### Authentication & Authorization
+- JWT-based authentication required for all endpoints
+- Role-based access control for task operations
+- Customer-specific data isolation and permissions
+
+### Error Handling
+Standardized error responses with detailed messages and status codes.
+
+**Section sources**
+- [route.ts](file://src/app/api/tasks/route.ts)
+
+## Customer Management Integration
+The task management system seamlessly integrates with the existing customer management system to enable workflow automation:
+
+### Integration Features
+- Customer validation during task creation and assignment
+- Customer-specific task workflows and approval processes
+- Automated notifications to customers based on task status changes
+- Customer portal integration for task visibility and collaboration
+- Billing and time tracking integration with customer accounts
+
+### Workflow Automation
+- Automatic task routing based on customer type and service level
+- Escalation rules for overdue customer tasks
+- Client-specific reporting and dashboard customization
+- Integration with customer communication channels
+
+### Data Synchronization
+- Real-time customer data synchronization
+- Customer activity tracking and impact assessment
+- Historical customer interaction logging
+
+**Section sources**
+- [route.ts](file://src/app/api/tasks/route.ts)
+
 ## Dependency Analysis
 Internal dependencies:
 - Components depend on services for data and mutations.
 - Services depend on types and either mock data or API routes.
 - Page orchestrates components and services.
+- API routes integrate with customer management system.
 
 External dependencies:
 - UI primitives (buttons, dialogs, tables) from the shared UI library.
 - Optional charting libraries for visualizations.
+- Customer management system APIs for workflow automation.
+- Authentication and authorization services.
 
 Potential coupling:
 - Tight coupling between columns and task types; mitigate by using typed column builders.
 - Service-to-API contract should be versioned and documented.
+- Customer integration requires careful error handling and fallback strategies.
 
 ```mermaid
 graph TB
@@ -399,6 +500,8 @@ DT --> ROW["data-table-row-actions.tsx"]
 DT --> SVC["task-services.ts"]
 SVC --> TYPES["task-types.ts"]
 SVC --> MOCK["task-mock-data.ts"]
+SVC --> API["api/tasks/route.ts"]
+API --> CUST["customers/route.ts"]
 Page --> CHART["task-chart-services.ts"]
 Page --> STATS["task-statistics-services.ts"]
 ```
@@ -414,6 +517,7 @@ Page --> STATS["task-statistics-services.ts"]
 - [task-mock-data.ts](file://src/modules/tasks/services/task-mock-data.ts)
 - [task-chart-services.ts](file://src/modules/tasks/services/task-chart-services.ts)
 - [task-statistics-services.ts](file://src/modules/tasks/services/task-statistics-services.ts)
+- [route.ts](file://src/app/api/tasks/route.ts)
 
 **Section sources**
 - [page.tsx](file://src/app/(private)/tasks/page.tsx)
@@ -426,6 +530,7 @@ Page --> STATS["task-statistics-services.ts"]
 - [task-mock-data.ts](file://src/modules/tasks/services/task-mock-data.ts)
 - [task-chart-services.ts](file://src/modules/tasks/services/task-chart-services.ts)
 - [task-statistics-services.ts](file://src/modules/tasks/services/task-statistics-services.ts)
+- [route.ts](file://src/app/api/tasks/route.ts)
 
 ## Performance Considerations
 - Memoize expensive computations (filters, sorting, statistics).
@@ -434,6 +539,8 @@ Page --> STATS["task-statistics-services.ts"]
 - Implement optimistic UI updates with rollback on error.
 - Prefer server-side pagination and filtering for scalability.
 - Cache chart and statistics results with invalidation strategies.
+- Optimize customer API calls with caching and batch requests.
+- Implement lazy loading for customer data and task assignments.
 
 ## Troubleshooting Guide
 Common issues and resolutions:
@@ -442,11 +549,15 @@ Common issues and resolutions:
 - Sorting inconsistencies: Confirm stable sort keys and consistent locale/date formats.
 - Real-time not updating: Check event subscription setup and cache invalidation logic.
 - API failures: Inspect route handlers and network requests; handle retries and user feedback.
+- Customer integration errors: Verify customer data availability and API connectivity.
+- Permission denied errors: Check user roles and customer access permissions.
 
 Operational checks:
 - Confirm service-layer contracts match API response shapes.
 - Validate enum values align with UI label mappings.
 - Review error boundaries and toast notifications for user clarity.
+- Monitor customer API health and fallback mechanisms.
+- Audit task workflow transitions and permission enforcement.
 
 **Section sources**
 - [add-task-modal.tsx](file://src/modules/tasks/components/add-task-modal.tsx)
@@ -454,4 +565,4 @@ Operational checks:
 - [route.ts](file://src/app/api/tasks/route.ts)
 
 ## Conclusion
-The Task Management module offers a robust foundation for building task-centric features. Its layered design separates concerns cleanly, enabling easy extension for custom workflows, charts, and statistics. With faceted filtering, status tracking, priority management, and deadline handling, it provides a rich user experience while remaining maintainable and testable.
+The Task Management module offers a robust foundation for building task-centric features with comprehensive API support and customer integration capabilities. Its layered design separates concerns cleanly, enabling easy extension for custom workflows, charts, and statistics. With faceted filtering, status tracking, priority management, deadline handling, and seamless customer management integration, it provides a rich user experience while remaining maintainable and testable. The enhanced API endpoint with CRUD operations, status management, and assignment capabilities makes it suitable for enterprise-level task management scenarios with complex workflow requirements.

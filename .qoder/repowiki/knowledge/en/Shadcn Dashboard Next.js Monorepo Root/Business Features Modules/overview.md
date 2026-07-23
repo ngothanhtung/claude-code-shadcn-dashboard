@@ -1,1 +1,0 @@
-Top-level grouping of six independent React feature modules (calendar, chat, customers, documents, tasks, users) that each own their UI components and Firestore-backed services.

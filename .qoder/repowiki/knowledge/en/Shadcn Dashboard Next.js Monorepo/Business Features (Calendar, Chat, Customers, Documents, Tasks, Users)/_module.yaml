@@ -1,0 +1,13 @@
+schema_version: 1
+module_path: business_features
+title: Business Features (Calendar, Chat, Customers, Documents, Tasks, Users)
+scope:
+    - src/modules/calendar/
+    - src/modules/chat/
+    - src/modules/customers/
+    - src/modules/documents/
+    - src/modules/tasks/
+    - src/modules/users/
+source_files: []
+depends_on: []
+related_to: []

@@ -1,0 +1,1 @@
+Next.js App Router server routes exposing admin user CRUD over Firebase Auth/Firestore, a public customer intake endpoint with Telegram notifications, a stateless mock tasks list, NextAuth session proxy, and a Telegram webhook stub.

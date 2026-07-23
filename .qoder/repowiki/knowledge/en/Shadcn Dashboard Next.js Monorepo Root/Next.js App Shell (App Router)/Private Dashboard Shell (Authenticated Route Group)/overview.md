@@ -1,1 +1,0 @@
-Next.js App Router route group that wraps all authenticated dashboard pages behind a shared layout providing the sidebar, header, footer, and theme customizer for the private section of the application.

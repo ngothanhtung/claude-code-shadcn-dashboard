@@ -1,9 +1,0 @@
-schema_version: 1
-module_path: business_features/chat
-title: Chat & Messaging Feature
-scope:
-    - src/modules/chat/
-source_files: []
-depends_on: []
-related_to:
-    - path: app_shell/private_dashboard/communication_and_dashboards

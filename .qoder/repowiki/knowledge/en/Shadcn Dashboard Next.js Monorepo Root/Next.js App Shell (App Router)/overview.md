@@ -1,1 +1,0 @@
-Top-level Next.js App Router root that wires the public auth/error pages, authenticated dashboard route group, and server-side API endpoints under a single application shell.

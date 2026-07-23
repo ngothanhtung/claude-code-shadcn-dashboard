@@ -15,12 +15,15 @@ import {
 
 import { documentStatuses } from "@/modules/documents/services/document-mock-data"
 import type { Document } from "@/modules/documents/services/types/document-types"
+import type { Folder } from "@/modules/documents/services/types/folder-types"
 import { AddDocumentModal } from "./add-document-modal"
 import { DataTableViewOptions } from "./data-table-view-options"
 
 interface DataTableToolbarProps<TData> {
   table: Table<TData>
   canManage?: boolean
+  folders?: Folder[]
+  defaultFolderId?: string | null
   onAddDocument?: (
     document: Omit<Document, "id">
   ) => Promise<Document | void> | void
@@ -32,6 +35,8 @@ interface DataTableToolbarProps<TData> {
 export function DataTableToolbar<TData>({
   table,
   canManage = false,
+  folders = [],
+  defaultFolderId = null,
   onAddDocument,
   onFilesUploaded,
   onSeedDocuments,
@@ -125,6 +130,8 @@ export function DataTableToolbar<TData>({
             <AddDocumentModal
               onAddDocument={onAddDocument}
               onFilesUploaded={onFilesUploaded}
+              folders={folders}
+              defaultFolderId={defaultFolderId}
             />
           )}
         </div>

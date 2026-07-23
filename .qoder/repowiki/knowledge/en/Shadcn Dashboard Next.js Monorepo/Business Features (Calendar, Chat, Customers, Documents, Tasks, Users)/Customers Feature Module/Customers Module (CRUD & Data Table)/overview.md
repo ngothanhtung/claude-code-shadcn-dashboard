@@ -1,0 +1,1 @@
+Provides a customer management feature with a TanStack Table UI, add/edit/delete operations, and Firestore-backed persistence with per-user row-level security.

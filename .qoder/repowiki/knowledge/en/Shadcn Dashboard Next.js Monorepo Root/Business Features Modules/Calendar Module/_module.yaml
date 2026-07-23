@@ -1,9 +1,0 @@
-schema_version: 1
-module_path: business_features/calendar
-title: Calendar Module
-scope:
-    - src/modules/calendar/
-source_files: []
-depends_on: []
-related_to:
-    - path: app_shell/private_dashboard/productivity_features

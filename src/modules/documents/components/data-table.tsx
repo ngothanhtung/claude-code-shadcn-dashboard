@@ -28,11 +28,15 @@ import {
 import { DataTablePagination } from "./data-table-pagination"
 import { DataTableToolbar } from "./data-table-toolbar"
 import type { Document } from "@/modules/documents/services/types/document-types"
+import type { Folder } from "@/modules/documents/services/types/folder-types"
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
   canManage?: boolean
+  folders?: Folder[]
+  /** Folder pre-selected in the Add Document dialog. */
+  defaultFolderId?: string | null
   onAddDocument?: (
     document: Omit<Document, "id">
   ) => Promise<Document | void> | void
@@ -45,6 +49,8 @@ export function DataTable<TData, TValue>({
   columns,
   data,
   canManage = false,
+  folders = [],
+  defaultFolderId = null,
   onAddDocument,
   onFilesUploaded,
   onSeedDocuments,
@@ -85,6 +91,8 @@ export function DataTable<TData, TValue>({
       <DataTableToolbar
         table={table}
         canManage={canManage}
+        folders={folders}
+        defaultFolderId={defaultFolderId}
         onAddDocument={onAddDocument}
         onFilesUploaded={onFilesUploaded}
         onSeedDocuments={onSeedDocuments}

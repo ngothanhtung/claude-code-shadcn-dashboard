@@ -1,1 +1,0 @@
-React Server Components with `"use client"` for interactive pieces; `@tanstack/react-table` for in-memory table features (sorting, filtering, pagination, faceting); `zod` for runtime validation of both the domain model and the add-form; Firebase Firestore SDK (`collection`, `query`, `where`, `writeBatch`, etc.) for persistence.

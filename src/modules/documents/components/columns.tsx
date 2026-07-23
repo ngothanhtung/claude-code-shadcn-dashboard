@@ -1,7 +1,7 @@
 "use client"
 
 import type { ColumnDef } from "@tanstack/react-table"
-import { Paperclip } from "lucide-react"
+import { Folder as FolderIcon, Paperclip } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -12,6 +12,7 @@ import type {
   Document,
   DocumentAttachment,
 } from "@/modules/documents/services/types/document-types"
+import type { Folder } from "@/modules/documents/services/types/folder-types"
 import { DataTableColumnHeader } from "./data-table-column-header"
 import { DataTableRowActions } from "./data-table-row-actions"
 
@@ -33,6 +34,7 @@ function formatDate(value: unknown): string {
 
 interface DocumentColumnActions {
   attachmentsMap?: Record<string, DocumentAttachment[]>
+  folders?: Folder[]
   canManage?: boolean
   onUpdateDocument?: (document: Document) => void | Promise<void>
   onDeleteDocument?: (documentId: string) => void | Promise<void>
@@ -41,11 +43,14 @@ interface DocumentColumnActions {
 
 export function getDocumentColumns({
   attachmentsMap,
+  folders = [],
   canManage = false,
   onUpdateDocument,
   onDeleteDocument,
   onFilesUploaded,
 }: DocumentColumnActions = {}): ColumnDef<Document>[] {
+  const folderNameById = new Map(folders.map((f) => [f.id, f.name]))
+
   return [
     {
       id: "select",
@@ -158,6 +163,35 @@ export function getDocumentColumns({
       },
     },
     {
+      accessorKey: "folderId",
+      size: 140,
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Thư mục" />
+      ),
+      cell: ({ row }) => {
+        const folderId = row.getValue("folderId") as string | null | undefined
+        const folderName = folderId ? folderNameById.get(folderId) : undefined
+
+        if (!folderName) {
+          return <div className="text-sm text-muted-foreground italic">—</div>
+        }
+
+        return (
+          <div className="flex max-w-[160px] items-center gap-1.5 truncate text-sm">
+            <FolderIcon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+            <span className="truncate">{folderName}</span>
+          </div>
+        )
+      },
+      sortingFn: (rowA, rowB) => {
+        const a =
+          folderNameById.get((rowA.getValue("folderId") as string) ?? "") ?? ""
+        const b =
+          folderNameById.get((rowB.getValue("folderId") as string) ?? "") ?? ""
+        return a.localeCompare(b, "vi")
+      },
+    },
+    {
       accessorKey: "createdBy",
       size: 140,
       header: ({ column }) => (
@@ -198,6 +232,7 @@ export function getDocumentColumns({
         <DataTableRowActions
           row={row}
           attachments={attachmentsMap?.[row.original.id]}
+          folders={folders}
           canManage={canManage}
           onUpdateDocument={onUpdateDocument}
           onDeleteDocument={onDeleteDocument}

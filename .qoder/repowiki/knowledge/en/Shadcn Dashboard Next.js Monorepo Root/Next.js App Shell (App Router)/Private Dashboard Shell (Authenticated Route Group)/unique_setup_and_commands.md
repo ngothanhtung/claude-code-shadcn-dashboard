@@ -1,1 +1,0 @@
-No special setup; any new page under `src/app/(private)/<feature>/page.tsx` automatically inherits the sidebar/header/footer layout through Next.js route-group composition.

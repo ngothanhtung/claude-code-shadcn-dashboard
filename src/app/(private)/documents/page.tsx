@@ -15,6 +15,7 @@ import {
 import { hasDocumentManagerAccess } from "@/lib/auth/permissions"
 import { getDocumentColumns } from "@/modules/documents/components/columns"
 import { DataTable } from "@/modules/documents/components/data-table"
+import { FolderTree } from "@/modules/documents/components/folder-tree"
 import {
   createDocument,
   deleteDocument,
@@ -24,16 +25,25 @@ import {
   updateDocument,
 } from "@/modules/documents/services/document-services"
 import { listDocumentAttachments } from "@/modules/documents/services/document-file-services"
+import {
+  createFolder,
+  deleteFolder,
+  getFolders,
+  updateFolder,
+} from "@/modules/documents/services/folder-services"
 import type {
   Document,
   DocumentAttachment,
 } from "@/modules/documents/services/types/document-types"
+import type { Folder } from "@/modules/documents/services/types/folder-types"
 
 export default function DocumentPage() {
   const { data: session } = useSession()
   const canManageDocuments = hasDocumentManagerAccess(session?.user)
 
   const [documents, setDocuments] = useState<Document[]>([])
+  const [folders, setFolders] = useState<Folder[]>([])
+  const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null)
   const [attachmentsMap, setAttachmentsMap] = useState<
     Record<string, DocumentAttachment[]>
   >({})
@@ -78,8 +88,12 @@ export default function DocumentPage() {
   useEffect(() => {
     const loadDocuments = async () => {
       try {
-        const documentList = await getDocuments()
+        const [documentList, folderList] = await Promise.all([
+          getDocuments(),
+          getFolders(),
+        ])
         setDocuments(documentList)
+        setFolders(folderList)
         // Load attachments for all documents so the View Details dialog can show them.
         await refreshAllAttachments(documentList)
       } catch (error) {
@@ -161,6 +175,91 @@ export default function DocumentPage() {
     [refreshAttachments]
   )
 
+  const handleAddFolder = useCallback(
+    async (name: string, parentId: string | null) => {
+      if (!canManageDocuments) {
+        toast.error("Không có quyền tạo thư mục", {
+          description:
+            "Bạn không có quyền tạo thư mục. Yêu cầu vai trò Document Manager.",
+        })
+        return
+      }
+      try {
+        const created = await createFolder({
+          name,
+          parentId,
+          createdBy: session?.user?.name || session?.user?.email || "Unknown",
+        })
+        setFolders((prev) => [...prev, created])
+        toast.success("Tạo thư mục thành công", {
+          description: `Thư mục "${created.name}" đã được tạo.`,
+        })
+      } catch (error) {
+        toast.error("Lỗi khi tạo thư mục", {
+          description:
+            error instanceof Error
+              ? error.message
+              : "Không thể tạo thư mục. Vui lòng thử lại sau.",
+        })
+      }
+    },
+    [canManageDocuments, session]
+  )
+
+  const handleUpdateFolder = useCallback(
+    async (folderItem: Folder) => {
+      if (!canManageDocuments) {
+        toast.error("Không có quyền đổi tên thư mục", {
+          description:
+            "Bạn không có quyền chỉnh sửa thư mục. Yêu cầu vai trò Document Manager.",
+        })
+        return
+      }
+      try {
+        const updated = await updateFolder(folderItem)
+        setFolders((prev) =>
+          prev.map((item) => (item.id === updated.id ? updated : item))
+        )
+        toast.success("Đổi tên thư mục thành công", {
+          description: `Thư mục đã được đổi tên thành "${updated.name}".`,
+        })
+      } catch (error) {
+        toast.error("Lỗi khi đổi tên thư mục", {
+          description:
+            error instanceof Error
+              ? error.message
+              : "Không thể đổi tên thư mục. Vui lòng thử lại sau.",
+        })
+      }
+    },
+    [canManageDocuments]
+  )
+
+  const handleDeleteFolder = useCallback(
+    async (folderId: string) => {
+      if (!canManageDocuments) {
+        toast.error("Không có quyền xóa thư mục", {
+          description:
+            "Bạn không có quyền xóa thư mục. Yêu cầu vai trò Document Manager.",
+        })
+        return
+      }
+      try {
+        // Throws when the folder still contains documents or sub-folders.
+        await deleteFolder(folderId)
+        setFolders((prev) => prev.filter((item) => item.id !== folderId))
+        setSelectedFolderId((prev) => (prev === folderId ? null : prev))
+        toast.success("Xóa thư mục thành công")
+      } catch (error) {
+        toast.error("Không thể xóa thư mục", {
+          description:
+            error instanceof Error ? error.message : "Vui lòng thử lại sau.",
+        })
+      }
+    },
+    [canManageDocuments]
+  )
+
   const handleSeedDocuments = useCallback(async () => {
     if (!canManageDocuments) {
       toast.error("Không có quyền seed dữ liệu", {
@@ -193,6 +292,7 @@ export default function DocumentPage() {
     () =>
       getDocumentColumns({
         attachmentsMap,
+        folders,
         canManage: canManageDocuments,
         onUpdateDocument: handleUpdateDocument,
         onDeleteDocument: handleDeleteDocument,
@@ -200,12 +300,30 @@ export default function DocumentPage() {
       }),
     [
       attachmentsMap,
+      folders,
       canManageDocuments,
       handleDeleteDocument,
       handleFilesUploaded,
       handleUpdateDocument,
     ]
   )
+
+  /** Documents shown in the table, filtered by the selected folder. */
+  const filteredDocuments = useMemo(() => {
+    if (selectedFolderId === null) return documents
+    return documents.filter((item) => item.folderId === selectedFolderId)
+  }, [documents, selectedFolderId])
+
+  /** Number of direct documents per folder (for the tree badges). */
+  const countByFolder = useMemo(() => {
+    const counts: Record<string, number> = {}
+    for (const item of documents) {
+      if (item.folderId) {
+        counts[item.folderId] = (counts[item.folderId] ?? 0) + 1
+      }
+    }
+    return counts
+  }, [documents])
 
   const stats = getDocumentStats(documents)
   const getPercent = (value: number) =>
@@ -318,26 +436,44 @@ export default function DocumentPage() {
           </Card>
         </div>
 
-        {/* Data Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Quản lý tài liệu</CardTitle>
-            <CardDescription>
-              Xem, lọc và quản lý tất cả tài liệu của bạn tại một nơi.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <DataTable
-              data={documents}
-              columns={documentColumns}
+        {/* Folder Tree + Data Table */}
+        <div className="flex items-start gap-6">
+          <div className="w-64 shrink-0">
+            <FolderTree
+              folders={folders}
+              countByFolder={countByFolder}
+              totalDocuments={documents.length}
+              selectedFolderId={selectedFolderId}
+              onSelectFolder={setSelectedFolderId}
               canManage={canManageDocuments}
-              onAddDocument={handleAddDocument}
-              onFilesUploaded={handleFilesUploaded}
-              onSeedDocuments={handleSeedDocuments}
-              isSeedingDocuments={isSeedingDocuments}
+              onAddFolder={handleAddFolder}
+              onUpdateFolder={handleUpdateFolder}
+              onDeleteFolder={handleDeleteFolder}
             />
-          </CardContent>
-        </Card>
+          </div>
+
+          <Card className="min-w-0 flex-1">
+            <CardHeader>
+              <CardTitle>Quản lý tài liệu</CardTitle>
+              <CardDescription>
+                Xem, lọc và quản lý tất cả tài liệu của bạn tại một nơi.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <DataTable
+                data={filteredDocuments}
+                columns={documentColumns}
+                canManage={canManageDocuments}
+                folders={folders}
+                defaultFolderId={selectedFolderId}
+                onAddDocument={handleAddDocument}
+                onFilesUploaded={handleFilesUploaded}
+                onSeedDocuments={handleSeedDocuments}
+                isSeedingDocuments={isSeedingDocuments}
+              />
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </>
   )

@@ -3,11 +3,11 @@ schema_version: 1
 locale: en-US
 branch: firebase-storage
 nodes_managed: true
-exported_at: "2026-07-23T03:44:19Z"
+exported_at: "2026-07-23T20:07:56Z"
 modules:
     "":
-        dir_name: Shadcn Dashboard Next.js Monorepo Root
-        title: Shadcn Dashboard Next.js Monorepo Root
+        dir_name: Shadcn Dashboard Next.js Monorepo
+        title: Shadcn Dashboard Next.js Monorepo
         scope:
             - CLAUDE.md
             - package.json
@@ -35,8 +35,8 @@ modules:
         depends_on: []
         related_to: []
     app_shell:
-        dir_name: Next.js App Shell (App Router)
-        title: Next.js App Shell (App Router)
+        dir_name: Next.js App Router Application Shell
+        title: Next.js App Router Application Shell
         scope:
             - src/app/
         source_files: []
@@ -47,15 +47,14 @@ modules:
         depends_on: []
         related_to: []
     app_shell/api_routes:
-        dir_name: Next.js App Router API Endpoints
-        title: Next.js App Router API Endpoints
+        dir_name: Next.js App Router API Routes
+        title: Next.js App Router API Routes
         scope:
             - src/app/api/
         source_files: []
         children: []
         depends_on: []
-        related_to:
-            - path: business_features/users
+        related_to: []
     app_shell/auth_pages:
         dir_name: Authentication & Error Pages (Next.js App Router)
         title: Authentication & Error Pages (Next.js App Router)
@@ -66,8 +65,8 @@ modules:
         depends_on: []
         related_to: []
     app_shell/private_dashboard:
-        dir_name: Private Dashboard Shell (Authenticated Route Group)
-        title: Private Dashboard Shell (Authenticated Route Group)
+        dir_name: Private Dashboard Route Group
+        title: Private Dashboard Route Group
         scope:
             - src/app/(private)/
         source_files: []
@@ -87,12 +86,10 @@ modules:
         source_files: []
         children: []
         depends_on: []
-        related_to:
-            - path: business_features/chat
-            - path: dashboard_features
+        related_to: []
     app_shell/private_dashboard/productivity_features:
-        dir_name: Productivity Features Dashboard Pages
-        title: Productivity Features Dashboard Pages
+        dir_name: Productivity Dashboard Pages (Tasks, Calendar, Documents)
+        title: Productivity Dashboard Pages (Tasks, Calendar, Documents)
         scope:
             - src/app/(private)/tasks/
             - src/app/(private)/calendar/
@@ -100,10 +97,7 @@ modules:
         source_files: []
         children: []
         depends_on: []
-        related_to:
-            - path: business_features/calendar
-            - path: business_features/documents
-            - path: business_features/tasks
+        related_to: []
     app_shell/private_dashboard/settings:
         dir_name: Private Settings Pages (Account, Appearance, Connections, Notifications, User)
         title: Private Settings Pages (Account, Appearance, Connections, Notifications, User)
@@ -112,11 +106,10 @@ modules:
         source_files: []
         children: []
         depends_on: []
-        related_to:
-            - path: cross_cutting
+        related_to: []
     business_features:
-        dir_name: Business Features Modules
-        title: Business Features Modules
+        dir_name: Business Features (Calendar, Chat, Customers, Documents, Tasks, Users)
+        title: Business Features (Calendar, Chat, Customers, Documents, Tasks, Users)
         scope:
             - src/modules/calendar/
             - src/modules/chat/
@@ -142,8 +135,7 @@ modules:
         source_files: []
         children: []
         depends_on: []
-        related_to:
-            - path: app_shell/private_dashboard/productivity_features
+        related_to: []
     business_features/chat:
         dir_name: Chat & Messaging Feature
         title: Chat & Messaging Feature
@@ -152,11 +144,20 @@ modules:
         source_files: []
         children: []
         depends_on: []
-        related_to:
-            - path: app_shell/private_dashboard/communication_and_dashboards
+        related_to: []
     business_features/customers:
-        dir_name: Customers Feature (CRUD, Table & RLS)
-        title: Customers Feature (CRUD, Table & RLS)
+        dir_name: Customers Feature Module
+        title: Customers Feature Module
+        scope:
+            - src/modules/customers/
+        source_files: []
+        children:
+            - business_features/customers/customers
+        depends_on: []
+        related_to: []
+    business_features/customers/customers:
+        dir_name: Customers Module (CRUD & Data Table)
+        title: Customers Module (CRUD & Data Table)
         scope:
             - src/modules/customers/
         source_files: []
@@ -164,15 +165,14 @@ modules:
         depends_on: []
         related_to: []
     business_features/documents:
-        dir_name: Documents & Attachments Feature
-        title: Documents & Attachments Feature
+        dir_name: Documents & Attachments Feature (Firestore + Storage)
+        title: Documents & Attachments Feature (Firestore + Storage)
         scope:
             - src/modules/documents/
         source_files: []
         children: []
         depends_on: []
-        related_to:
-            - path: app_shell/private_dashboard/productivity_features
+        related_to: []
     business_features/tasks:
         dir_name: Tasks Feature (CRUD Table & Dashboard)
         title: Tasks Feature (CRUD Table & Dashboard)
@@ -181,8 +181,7 @@ modules:
         source_files: []
         children: []
         depends_on: []
-        related_to:
-            - path: app_shell/private_dashboard/productivity_features
+        related_to: []
     business_features/users:
         dir_name: User & Role Administration (Admin Dashboard)
         title: User & Role Administration (Admin Dashboard)
@@ -191,11 +190,10 @@ modules:
         source_files: []
         children: []
         depends_on: []
-        related_to:
-            - path: app_shell/api_routes
+        related_to: []
     cross_cutting:
-        dir_name: Cross-Cutting Services Auth, Firebase, Theme & UI Utilities
-        title: 'Cross-Cutting Services: Auth, Firebase, Theme & UI Utilities'
+        dir_name: Cross-Cutting Services Auth, Firebase, Theme System & Shared Hooks
+        title: 'Cross-Cutting Services: Auth, Firebase, Theme System & Shared Hooks'
         scope:
             - src/lib/auth/
             - src/lib/firebase/
@@ -207,8 +205,7 @@ modules:
         source_files: []
         children: []
         depends_on: []
-        related_to:
-            - path: app_shell/private_dashboard/settings
+        related_to: []
     dashboard_features:
         dir_name: Dashboard & Settings Feature Modules
         title: Dashboard & Settings Feature Modules
@@ -219,12 +216,10 @@ modules:
         source_files: []
         children: []
         depends_on: []
-        related_to:
-            - path: app_shell/private_dashboard/communication_and_dashboards
-            - path: ui_components
+        related_to: []
     shared_features:
-        dir_name: Shared Dashboard Shell & Reusable UI Components
-        title: Shared Dashboard Shell & Reusable UI Components
+        dir_name: Dashboard Chrome & Shared UI Components
+        title: Dashboard Chrome & Shared UI Components
         scope:
             - src/components/auth-provider.tsx
             - src/components/site-header.tsx
@@ -256,5 +251,4 @@ modules:
         source_files: []
         children: []
         depends_on: []
-        related_to:
-            - path: dashboard_features
+        related_to: []

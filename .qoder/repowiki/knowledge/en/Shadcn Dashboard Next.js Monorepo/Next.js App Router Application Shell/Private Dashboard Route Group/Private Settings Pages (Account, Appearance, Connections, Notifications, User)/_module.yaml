@@ -1,0 +1,8 @@
+schema_version: 1
+module_path: app_shell/private_dashboard/settings
+title: Private Settings Pages (Account, Appearance, Connections, Notifications, User)
+scope:
+    - src/app/(private)/settings/
+source_files: []
+depends_on: []
+related_to: []

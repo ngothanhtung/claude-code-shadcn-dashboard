@@ -1,0 +1,8 @@
+schema_version: 1
+module_path: app_shell/private_dashboard
+title: Private Dashboard Route Group
+scope:
+    - src/app/(private)/
+source_files: []
+depends_on: []
+related_to: []

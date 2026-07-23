@@ -46,6 +46,10 @@ import {
   type Document,
   type DocumentFormData,
 } from "@/modules/documents/services/types/document-types"
+import {
+  flattenFoldersForSelect,
+  type Folder,
+} from "@/modules/documents/services/types/folder-types"
 
 interface AddDocumentModalProps {
   /**
@@ -61,6 +65,10 @@ interface AddDocumentModalProps {
    * refresh its attachments cache for the given document.
    */
   onFilesUploaded?: (documentId: string) => void | Promise<void>
+  /** Available folders for the folder selector. */
+  folders?: Folder[]
+  /** Folder pre-selected when the dialog opens. */
+  defaultFolderId?: string | null
   trigger?: React.ReactNode
 }
 
@@ -92,6 +100,8 @@ function validateFile(file: File): string | null {
 export function AddDocumentModal({
   onAddDocument,
   onFilesUploaded,
+  folders = [],
+  defaultFolderId = null,
   trigger,
 }: AddDocumentModalProps) {
   const [open, setOpen] = useState(false)
@@ -116,9 +126,13 @@ export function AddDocumentModal({
     (nextOpen: boolean) => {
       if (!nextOpen && isSubmitting) return
       if (!nextOpen) resetState()
+      if (nextOpen) {
+        // Pre-select the folder the user is currently browsing.
+        setFormData((prev) => ({ ...prev, folderId: defaultFolderId ?? null }))
+      }
       setOpen(nextOpen)
     },
-    [isSubmitting, resetState]
+    [defaultFolderId, isSubmitting, resetState]
   )
 
   const addFiles = useCallback((incoming: FileList | File[]) => {
@@ -203,6 +217,7 @@ export function AddDocumentModal({
         name: validatedData.name,
         status: validatedData.status,
         summary: validatedData.summary ?? "",
+        folderId: validatedData.folderId ?? null,
       }
 
       const created = await onAddDocument?.(newDocument)
@@ -361,6 +376,38 @@ export function AddDocumentModal({
                         <status.icon className="mr-2 h-4 w-4 text-muted-foreground" />
                       )}
                       {status.label}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Folder */}
+          <div className="space-y-2">
+            <Label htmlFor="doc-folder">Thư mục</Label>
+            <Select
+              value={formData.folderId ?? "none"}
+              onValueChange={(value) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  folderId: value === "none" ? null : value,
+                }))
+              }
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Chọn thư mục" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">
+                  <span className="text-muted-foreground">
+                    — Không có thư mục —
+                  </span>
+                </SelectItem>
+                {flattenFoldersForSelect(folders).map((option) => (
+                  <SelectItem key={option.id} value={option.id}>
+                    <div style={{ paddingLeft: `${option.depth * 14}px` }}>
+                      {option.name}
                     </div>
                   </SelectItem>
                 ))}

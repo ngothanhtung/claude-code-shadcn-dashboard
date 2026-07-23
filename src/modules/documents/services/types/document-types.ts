@@ -12,6 +12,8 @@ export const documentSchema = z.object({
     .max(100, "Name must be at most 100 characters"),
   status: documentStatusSchema,
   summary: z.string().optional().default(""),
+  /** Folder the document belongs to — `null` when uncategorized. */
+  folderId: z.string().nullable().optional(),
   createdBy: z.string().optional(),
   createdDate: z.unknown().optional(),
   createdAt: z.unknown().optional(),
@@ -28,6 +30,7 @@ export const documentFormSchema = z.object({
     .max(100, "Name must be at most 100 characters"),
   status: documentStatusSchema,
   summary: z.string().optional(),
+  folderId: z.string().nullable().optional(),
 })
 
 export type DocumentFormData = z.infer<typeof documentFormSchema>

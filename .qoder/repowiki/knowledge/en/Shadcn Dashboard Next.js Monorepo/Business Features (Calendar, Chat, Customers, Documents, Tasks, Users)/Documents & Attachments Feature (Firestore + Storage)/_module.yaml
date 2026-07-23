@@ -1,0 +1,8 @@
+schema_version: 1
+module_path: business_features/documents
+title: Documents & Attachments Feature (Firestore + Storage)
+scope:
+    - src/modules/documents/
+source_files: []
+depends_on: []
+related_to: []

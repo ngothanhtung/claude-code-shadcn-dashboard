@@ -1,1 +1,0 @@
-Next.js App Router server routes exposing admin user management, customer intake, a public mock tasks list, NextAuth session proxy, and a Telegram webhook endpoint.

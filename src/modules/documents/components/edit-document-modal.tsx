@@ -57,6 +57,10 @@ import {
   type DocumentAttachment,
   type DocumentFormData,
 } from "@/modules/documents/services/types/document-types"
+import {
+  flattenFoldersForSelect,
+  type Folder,
+} from "@/modules/documents/services/types/folder-types"
 
 interface EditDocumentModalProps {
   open: boolean
@@ -65,6 +69,8 @@ interface EditDocumentModalProps {
   document: Document
   /** Existing attachments of the document. */
   attachments?: DocumentAttachment[]
+  /** Available folders for the folder selector. */
+  folders?: Folder[]
   /** Persist the updated document info. */
   onUpdateDocument?: (document: Document) => void | Promise<void>
   /** Called after attachments change so the parent can refresh its cache. */
@@ -105,6 +111,7 @@ export function EditDocumentModal({
   onOpenChange,
   document,
   attachments = [],
+  folders = [],
   onUpdateDocument,
   onFilesUploaded,
 }: EditDocumentModalProps) {
@@ -198,6 +205,7 @@ export function EditDocumentModal({
         name: draft.name,
         status: draft.status,
         summary: draft.summary ?? "",
+        folderId: draft.folderId ?? null,
       })
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -240,6 +248,7 @@ export function EditDocumentModal({
         name: validatedData.name,
         status: validatedData.status,
         summary: validatedData.summary ?? "",
+        folderId: validatedData.folderId ?? null,
       })
 
       // 4. Delete staged removals
@@ -404,6 +413,42 @@ export function EditDocumentModal({
                           <status.icon className="mr-2 h-4 w-4 text-muted-foreground" />
                         )}
                         {status.label}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Folder */}
+            <div className="space-y-2">
+              <Label htmlFor={`edit-doc-folder-${document.id}`}>Thư mục</Label>
+              <Select
+                value={draft.folderId ?? "none"}
+                onValueChange={(value) =>
+                  setDraft((prev) =>
+                    prev
+                      ? {
+                          ...prev,
+                          folderId: value === "none" ? null : value,
+                        }
+                      : prev
+                  )
+                }
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Chọn thư mục" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">
+                    <span className="text-muted-foreground">
+                      — Không có thư mục —
+                    </span>
+                  </SelectItem>
+                  {flattenFoldersForSelect(folders).map((option) => (
+                    <SelectItem key={option.id} value={option.id}>
+                      <div style={{ paddingLeft: `${option.depth * 14}px` }}>
+                        {option.name}
                       </div>
                     </SelectItem>
                   ))}

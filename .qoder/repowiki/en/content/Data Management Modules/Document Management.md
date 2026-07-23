@@ -8,13 +8,21 @@
 - [components/data-table-toolbar.tsx](file://src/modules/documents/components/data-table-toolbar.tsx)
 - [components/data-table-row-actions.tsx](file://src/modules/documents/components/data-table-row-actions.tsx)
 - [components/add-document-modal.tsx](file://src/modules/documents/components/add-document-modal.tsx)
-- [components/upload-files-dialog.tsx](file://src/modules/documents/components/upload-files-dialog.tsx)
-- [components/document-attachments.tsx](file://src/modules/documents/components/document-attachments.tsx)
+- [components/edit-document-modal.tsx](file://src/modules/documents/components/edit-document-modal.tsx)
 - [services/document-services.ts](file://src/modules/documents/services/document-services.ts)
 - [services/document-file-services.ts](file://src/modules/documents/services/document-file-services.ts)
 - [services/document-mock-data.ts](file://src/modules/documents/services/document-mock-data.ts)
 - [services/types/document-types.ts](file://src/modules/documents/services/types/document-types.ts)
 </cite>
+
+## Update Summary
+**Changes Made**
+- Updated core components section to reflect the new unified edit-document-modal architecture
+- Revised file upload and attachment management sections to document the consolidated workflow
+- Enhanced detailed component analysis with focus on the new 630-line unified modal
+- Updated architecture diagrams to show the streamlined editing workflow
+- Removed references to legacy separate components (document-attachments, upload-files-dialog)
+- Added comprehensive error handling and user feedback documentation
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -29,11 +37,11 @@
 10. [Appendices](#appendices)
 
 ## Introduction
-This document provides comprehensive documentation for the Document Management module. It covers the data model, file upload functionality, attachment management, and the document-specific data table features such as filtering by file type, sorting by size, and preview capabilities. It also explains the upload dialog with drag-and-drop support and progress tracking, and outlines patterns for custom validators, storage integrations, and versioning. Finally, it details service layer patterns and security considerations for file handling.
+This document provides comprehensive documentation for the Document Management module. It covers the data model, unified document editing functionality, and the document-specific data table features such as filtering by file type, sorting by size, and preview capabilities. The module has been significantly restructured with a new unified edit-document-modal that consolidates previously separate attachment and upload components into a streamlined editing workflow with enhanced error handling and improved user feedback.
 
 ## Project Structure
 The Document Management module is organized under src/modules/documents with a clear separation between UI components and services:
-- components: Data table, toolbar, row actions, modals, and attachments UI
+- components: Data table, toolbar, row actions, modals including the new unified edit-document-modal
 - services: Types, mock data, and service functions for documents and files
 - app route: The page that renders the document management interface
 
@@ -48,14 +56,13 @@ C["columns.tsx"]
 D["data-table-toolbar.tsx"]
 E["data-table-row-actions.tsx"]
 F["add-document-modal.tsx"]
-G["upload-files-dialog.tsx"]
-H["document-attachments.tsx"]
+G["edit-document-modal.tsx"]
 end
 subgraph "Services"
-I["document-services.ts"]
-J["document-file-services.ts"]
-K["document-mock-data.ts"]
-L["types/document-types.ts"]
+H["document-services.ts"]
+I["document-file-services.ts"]
+J["document-mock-data.ts"]
+K["types/document-types.ts"]
 end
 A --> B
 B --> C
@@ -65,11 +72,10 @@ B --> F
 B --> G
 B --> H
 B --> I
-B --> J
+H --> J
+I --> J
+H --> K
 I --> K
-J --> K
-I --> L
-J --> L
 ```
 
 **Diagram sources**
@@ -79,8 +85,7 @@ J --> L
 - [components/data-table-toolbar.tsx](file://src/modules/documents/components/data-table-toolbar.tsx)
 - [components/data-table-row-actions.tsx](file://src/modules/documents/components/data-table-row-actions.tsx)
 - [components/add-document-modal.tsx](file://src/modules/documents/components/add-document-modal.tsx)
-- [components/upload-files-dialog.tsx](file://src/modules/documents/components/upload-files-dialog.tsx)
-- [components/document-attachments.tsx](file://src/modules/documents/components/document-attachments.tsx)
+- [components/edit-document-modal.tsx](file://src/modules/documents/components/edit-document-modal.tsx)
 - [services/document-services.ts](file://src/modules/documents/services/document-services.ts)
 - [services/document-file-services.ts](file://src/modules/documents/services/document-file-services.ts)
 - [services/document-mock-data.ts](file://src/modules/documents/services/document-mock-data.ts)
@@ -97,14 +102,14 @@ J --> L
 - Toolbar: Offers search, filters (including file type), and view options.
 - Row actions: Actions like download, delete, and manage attachments.
 - Add document modal: Creates new document entries.
-- Upload files dialog: Handles multi-file uploads with drag-and-drop and progress.
-- Attachments panel: Displays and manages attachments per document.
+- **Updated** Unified edit-document-modal: A comprehensive 630-line component that consolidates document editing, file uploads, and attachment management into a single streamlined workflow with enhanced error handling and user feedback.
 - Services: Encapsulate data operations and file-related logic.
 
 Key responsibilities:
 - Data table orchestrates state and delegates to columns, toolbar, and row actions.
+- **Updated** The unified edit-document-modal handles all document editing operations including file uploads, attachment management, and validation within a single interface.
 - Services abstract data access and file operations, using types for contracts.
-- Dialogs and modals encapsulate user workflows for adding and uploading files.
+- Modals encapsulate user workflows for adding and editing documents with integrated file handling.
 
 **Section sources**
 - [components/data-table.tsx](file://src/modules/documents/components/data-table.tsx)
@@ -112,15 +117,14 @@ Key responsibilities:
 - [components/data-table-toolbar.tsx](file://src/modules/documents/components/data-table-toolbar.tsx)
 - [components/data-table-row-actions.tsx](file://src/modules/documents/components/data-table-row-actions.tsx)
 - [components/add-document-modal.tsx](file://src/modules/documents/components/add-document-modal.tsx)
-- [components/upload-files-dialog.tsx](file://src/modules/documents/components/upload-files-dialog.tsx)
-- [components/document-attachments.tsx](file://src/modules/documents/components/document-attachments.tsx)
+- [components/edit-document-modal.tsx](file://src/modules/documents/components/edit-document-modal.tsx)
 - [services/document-services.ts](file://src/modules/documents/services/document-services.ts)
 - [services/document-file-services.ts](file://src/modules/documents/services/document-file-services.ts)
 - [services/document-mock-data.ts](file://src/modules/documents/services/document-mock-data.ts)
 - [services/types/document-types.ts](file://src/modules/documents/services/types/document-types.ts)
 
 ## Architecture Overview
-The module follows a layered architecture:
+The module follows a layered architecture with a streamlined editing workflow:
 - Presentation layer: React components render the UI and handle user interactions.
 - Service layer: Functions implement business logic and data access, using typed models.
 - Data source: Mock data or external APIs are consumed via services.
@@ -131,7 +135,7 @@ participant User as "User"
 participant Page as "Documents Page"
 participant Table as "Data Table"
 participant Toolbar as "Toolbar"
-participant Upload as "Upload Files Dialog"
+participant EditModal as "Unified Edit Modal"
 participant FileSvc as "Document File Services"
 participant DocSvc as "Document Services"
 participant Mock as "Mock Data"
@@ -144,11 +148,11 @@ DocSvc-->>Table : Documents[]
 User->>Toolbar : Filter by file type / Sort by size
 Toolbar->>Table : Update filters/sort
 Table->>Table : Apply client-side filter/sort
-User->>Upload : Drag & drop files
-Upload->>FileSvc : Validate and upload files
-FileSvc->>FileSvc : Track progress
-FileSvc-->>Upload : Progress updates
-Upload->>DocSvc : Create/update document records
+User->>EditModal : Click edit document
+EditModal->>FileSvc : Handle file uploads with progress
+FileSvc->>FileSvc : Validate and track progress
+FileSvc-->>EditModal : Progress updates
+EditModal->>DocSvc : Update document records
 DocSvc->>Mock : Persist changes
 Mock-->>DocSvc : Success
 DocSvc-->>Table : Refresh list
@@ -158,7 +162,7 @@ DocSvc-->>Table : Refresh list
 - [page.tsx](file://src/app/(private)/documents/page.tsx)
 - [components/data-table.tsx](file://src/modules/documents/components/data-table.tsx)
 - [components/data-table-toolbar.tsx](file://src/modules/documents/components/data-table-toolbar.tsx)
-- [components/upload-files-dialog.tsx](file://src/modules/documents/components/upload-files-dialog.tsx)
+- [components/edit-document-modal.tsx](file://src/modules/documents/components/edit-document-modal.tsx)
 - [services/document-services.ts](file://src/modules/documents/services/document-services.ts)
 - [services/document-file-services.ts](file://src/modules/documents/services/document-file-services.ts)
 - [services/document-mock-data.ts](file://src/modules/documents/services/document-mock-data.ts)
@@ -229,75 +233,55 @@ RenderRows --> End(["Ready for Interaction"])
 - [components/columns.tsx](file://src/modules/documents/components/columns.tsx)
 - [components/data-table-toolbar.tsx](file://src/modules/documents/components/data-table-toolbar.tsx)
 
-### File Upload Dialog
-The upload dialog supports:
-- Multi-file selection
-- Drag-and-drop zone
-- Real-time progress tracking
-- Validation before upload
-- Integration with file services for persistence
+### Unified Edit Document Modal
+**New** The unified edit-document-modal is a comprehensive 630-line component that replaces the previous separate attachment and upload components. This consolidation provides:
+
+- **Integrated Workflow**: Single interface for all document editing operations including file uploads, attachment management, and metadata editing
+- **Enhanced Error Handling**: Centralized error management with user-friendly feedback messages
+- **Streamlined UX**: Reduced navigation complexity by eliminating multiple dialog transitions
+- **Improved State Management**: Better coordination between file uploads, validation, and document updates
+
+Key features:
+- Multi-file upload with drag-and-drop support
+- Real-time progress tracking and validation
+- Attachment listing and management within the same modal
+- Comprehensive error handling with retry mechanisms
+- Form validation with immediate feedback
+- Responsive design for various screen sizes
 
 ```mermaid
 sequenceDiagram
 participant User as "User"
-participant Dialog as "Upload Files Dialog"
+participant EditModal as "Unified Edit Modal"
 participant Validator as "Validators"
 participant FileSvc as "Document File Services"
 participant DocSvc as "Document Services"
-User->>Dialog : Drop files or select files
-Dialog->>Validator : Validate file types and sizes
+User->>EditModal : Open edit document
+EditModal->>Validator : Validate form inputs
 alt Valid
-Dialog->>FileSvc : Upload files with progress callbacks
-FileSvc-->>Dialog : Progress events
-Dialog->>DocSvc : Create document records for uploaded files
-DocSvc-->>Dialog : Success
-Dialog-->>User : Show success and refresh list
+EditModal->>FileSvc : Upload files with progress callbacks
+FileSvc-->>EditModal : Progress events
+EditModal->>DocSvc : Update document records
+DocSvc-->>EditModal : Success
+EditModal-->>User : Show success and close modal
 else Invalid
-Dialog-->>User : Show validation errors
+EditModal-->>User : Show validation errors
 end
 ```
 
 **Diagram sources**
-- [components/upload-files-dialog.tsx](file://src/modules/documents/components/upload-files-dialog.tsx)
+- [components/edit-document-modal.tsx](file://src/modules/documents/components/edit-document-modal.tsx)
 - [services/document-file-services.ts](file://src/modules/documents/services/document-file-services.ts)
 - [services/document-services.ts](file://src/modules/documents/services/document-services.ts)
 
 **Section sources**
-- [components/upload-files-dialog.tsx](file://src/modules/documents/components/upload-files-dialog.tsx)
+- [components/edit-document-modal.tsx](file://src/modules/documents/components/edit-document-modal.tsx)
 - [services/document-file-services.ts](file://src/modules/documents/services/document-file-services.ts)
-
-### Attachment Management
-Attachments are managed per document:
-- Displayed in a dedicated panel
-- Support listing, downloading, and deletion
-- Linked to document records
-
-```mermaid
-flowchart TD
-SelectDoc["Select Document"] --> LoadAttachments["Load Attachments"]
-LoadAttachments --> ShowPanel["Show Attachments Panel"]
-ShowPanel --> Action{"User Action?"}
-Action --> |Download| Download["Download Attachment"]
-Action --> |Delete| Delete["Delete Attachment"]
-Download --> Refresh["Refresh List"]
-Delete --> Confirm{"Confirm Deletion?"}
-Confirm --> |Yes| Remove["Remove from Record"]
-Confirm --> |No| ShowPanel
-Remove --> Refresh
-Refresh --> ShowPanel
-```
-
-**Diagram sources**
-- [components/document-attachments.tsx](file://src/modules/documents/components/document-attachments.tsx)
-- [services/document-services.ts](file://src/modules/documents/services/document-services.ts)
-
-**Section sources**
-- [components/document-attachments.tsx](file://src/modules/documents/components/document-attachments.tsx)
 - [services/document-services.ts](file://src/modules/documents/services/document-services.ts)
 
 ### Row Actions and Modals
 Row actions provide quick operations:
-- Download, delete, and manage attachments
+- Download, delete, and manage attachments through the unified modal
 - Add document modal creates new entries
 - These integrate with services to update state
 
@@ -305,26 +289,36 @@ Row actions provide quick operations:
 sequenceDiagram
 participant User as "User"
 participant RowActions as "Row Actions"
-participant Modal as "Add Document Modal"
+participant EditModal as "Unified Edit Modal"
+participant AddModal as "Add Document Modal"
 participant DocSvc as "Document Services"
-User->>RowActions : Click action (download/delete/attach)
+User->>RowActions : Click action (download/delete/edit)
+alt Edit Action
+RowActions->>EditModal : Open unified edit modal
+EditModal->>DocSvc : Execute update operations
+DocSvc-->>EditModal : Result
+EditModal-->>User : Update UI and close
+else Delete/Download
 RowActions->>DocSvc : Execute operation
 DocSvc-->>RowActions : Result
 RowActions-->>User : Update UI
-User->>Modal : Open add document
-Modal->>DocSvc : Create document
-DocSvc-->>Modal : Success
-Modal-->>User : Close and refresh list
+end
+User->>AddModal : Open add document
+AddModal->>DocSvc : Create document
+DocSvc-->>AddModal : Success
+AddModal-->>User : Close and refresh list
 ```
 
 **Diagram sources**
 - [components/data-table-row-actions.tsx](file://src/modules/documents/components/data-table-row-actions.tsx)
 - [components/add-document-modal.tsx](file://src/modules/documents/components/add-document-modal.tsx)
+- [components/edit-document-modal.tsx](file://src/modules/documents/components/edit-document-modal.tsx)
 - [services/document-services.ts](file://src/modules/documents/services/document-services.ts)
 
 **Section sources**
 - [components/data-table-row-actions.tsx](file://src/modules/documents/components/data-table-row-actions.tsx)
 - [components/add-document-modal.tsx](file://src/modules/documents/components/add-document-modal.tsx)
+- [components/edit-document-modal.tsx](file://src/modules/documents/components/edit-document-modal.tsx)
 - [services/document-services.ts](file://src/modules/documents/services/document-services.ts)
 
 ## Dependency Analysis
@@ -332,6 +326,7 @@ The module exhibits low coupling between components and services:
 - Components depend on services through function calls rather than direct imports of data stores.
 - Types define contracts, reducing ambiguity and improving maintainability.
 - Mock data serves as a placeholder for backend integration.
+- **Updated** The unified edit-document-modal reduces component dependencies by consolidating functionality that was previously spread across multiple components.
 
 ```mermaid
 graph LR
@@ -339,10 +334,13 @@ Comp["Components"] --> Svc["Services"]
 Svc --> Types["Types"]
 Svc --> Mock["Mock Data"]
 App["App Route"] --> Comp
+EditModal["Edit Document Modal"] --> FileSvc["File Services"]
+EditModal --> DocSvc["Document Services"]
 ```
 
 **Diagram sources**
 - [components/data-table.tsx](file://src/modules/documents/components/data-table.tsx)
+- [components/edit-document-modal.tsx](file://src/modules/documents/components/edit-document-modal.tsx)
 - [services/document-services.ts](file://src/modules/documents/services/document-services.ts)
 - [services/document-file-services.ts](file://src/modules/documents/services/document-file-services.ts)
 - [services/document-mock-data.ts](file://src/modules/documents/services/document-mock-data.ts)
@@ -357,11 +355,10 @@ App["App Route"] --> Comp
 ## Performance Considerations
 - Client-side filtering and sorting: Keep datasets manageable; consider server-side pagination for large lists.
 - Debounce search input to reduce re-renders.
-- Lazy-load attachments and previews to avoid heavy initial loads.
+- **Updated** Unified modal optimization: The consolidated edit-document-modal reduces component mounting/unmounting overhead and improves state management efficiency.
 - Use virtualization for long lists if needed.
 - Optimize image previews with thumbnails and compression.
-
-[No sources needed since this section provides general guidance]
+- **Updated** Error handling performance: Centralized error management in the unified modal reduces redundant validation checks and improves overall responsiveness.
 
 ## Troubleshooting Guide
 Common issues and resolutions:
@@ -369,33 +366,33 @@ Common issues and resolutions:
 - Validation errors: Verify file type and size constraints in validators.
 - Filtering not working: Confirm filter values match column data types and formats.
 - Sorting anomalies: Ensure numeric sorting for size and consistent date formats.
-- Attachment operations failing: Validate permissions and record IDs passed to services.
+- **Updated** Unified modal issues: Check error handling logs in the edit-document-modal for comprehensive error details and user feedback messages.
+- **Updated** State synchronization: Verify that document updates from the unified modal properly trigger table refreshes and state updates.
 
 **Section sources**
-- [components/upload-files-dialog.tsx](file://src/modules/documents/components/upload-files-dialog.tsx)
+- [components/edit-document-modal.tsx](file://src/modules/documents/components/edit-document-modal.tsx)
 - [services/document-file-services.ts](file://src/modules/documents/services/document-file-services.ts)
 - [components/data-table-toolbar.tsx](file://src/modules/documents/components/data-table-toolbar.tsx)
 
 ## Conclusion
-The Document Management module provides a robust foundation for managing documents and attachments with a clean separation of concerns. Its data table offers powerful filtering and sorting, while the upload dialog supports modern UX patterns like drag-and-drop and progress feedback. By following the service layer patterns and security guidelines outlined here, teams can extend the module with custom validators, storage backends, and versioning strategies safely and efficiently.
-
-[No sources needed since this section summarizes without analyzing specific files]
+The Document Management module provides a robust foundation for managing documents with a clean separation of concerns. The recent restructuring with the unified edit-document-modal significantly improves the user experience by consolidating previously fragmented workflows into a single, cohesive interface. The data table offers powerful filtering and sorting capabilities, while the enhanced error handling and streamlined editing workflow provide better reliability and usability. By following the service layer patterns and security guidelines outlined here, teams can extend the module with custom validators, storage backends, and versioning strategies safely and efficiently.
 
 ## Appendices
 
 ### Implementing Custom File Validators
-- Define validation rules for file type and size in the upload flow.
-- Integrate validators into the upload dialog before invoking file services.
-- Surface user-friendly error messages for invalid inputs.
+- Define validation rules for file type and size in the upload flow within the unified modal.
+- Integrate validators into the edit-document-modal before invoking file services.
+- Surface user-friendly error messages for invalid inputs through the centralized error handling system.
 
 **Section sources**
-- [components/upload-files-dialog.tsx](file://src/modules/documents/components/upload-files-dialog.tsx)
+- [components/edit-document-modal.tsx](file://src/modules/documents/components/edit-document-modal.tsx)
 - [services/document-file-services.ts](file://src/modules/documents/services/document-file-services.ts)
 
 ### Storage Integrations
 - Replace mock persistence in services with real API calls.
 - Handle authentication tokens and error retries at the service layer.
 - Normalize responses to match the typed data model.
+- **Updated** Ensure the unified modal properly handles storage integration changes without requiring UI modifications.
 
 **Section sources**
 - [services/document-services.ts](file://src/modules/documents/services/document-services.ts)
@@ -404,7 +401,7 @@ The Document Management module provides a robust foundation for managing documen
 ### Document Versioning
 - Extend the data model to include version fields and history.
 - Implement create-version operations in services.
-- Provide UI to switch versions and compare changes.
+- Provide UI to switch versions and compare changes within the unified modal interface.
 
 **Section sources**
 - [services/types/document-types.ts](file://src/modules/documents/services/types/document-types.ts)
@@ -416,7 +413,8 @@ The Document Management module provides a robust foundation for managing documen
 - Use secure URLs and signed links for downloads.
 - Apply access controls per document and attachment.
 - Log and monitor suspicious upload attempts.
+- **Updated** The unified modal centralizes security validation and provides consistent error reporting for security-related issues.
 
 **Section sources**
-- [components/upload-files-dialog.tsx](file://src/modules/documents/components/upload-files-dialog.tsx)
+- [components/edit-document-modal.tsx](file://src/modules/documents/components/edit-document-modal.tsx)
 - [services/document-file-services.ts](file://src/modules/documents/services/document-file-services.ts)
