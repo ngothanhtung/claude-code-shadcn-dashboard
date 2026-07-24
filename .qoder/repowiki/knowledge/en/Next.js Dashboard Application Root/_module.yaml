@@ -1,6 +1,6 @@
 schema_version: 1
 module_path: ""
-title: Shadcn Dashboard Next.js Monorepo
+title: Next.js Dashboard Application Root
 scope:
     - CLAUDE.md
     - package.json

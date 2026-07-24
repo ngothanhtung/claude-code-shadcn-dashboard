@@ -1,1 +1,0 @@
-Standard Next.js lifecycle: `npm run dev` / `build` / `start` / `lint` drive the whole app; there is no per-child build step because everything compiles through the root Next.js pipeline.

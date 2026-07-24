@@ -20,6 +20,14 @@
 - [route.ts](file://src/app/api/telegram/route.ts)
 </cite>
 
+## Update Summary
+**Changes Made**
+- Enhanced Firestore security rules section with comprehensive row-level access control details
+- Added detailed coverage of granular permissions across multiple collections (customers, tasks, users, chats, calendars, documents)
+- Updated ownership-based access control implementation examples
+- Expanded role-based permission controls documentation
+- Added specific Firestore rule patterns for different data types and access scenarios
+
 ## Table of Contents
 1. [Introduction](#introduction)
 2. [Authentication Security](#authentication-security)
@@ -28,18 +36,19 @@
 5. [Security Headers](#security-headers)
 6. [Secure API Endpoints](#secure-api-endpoints)
 7. [Sensitive Data Protection](#sensitive-data-protection)
-8. [Security Monitoring and Audit Logging](#security-monitoring-and-audit-logging)
-9. [Vulnerability Prevention](#vulnerability-prevention)
-10. [Compliance Requirements](#compliance-requirements)
-11. [Production Deployment Security](#production-deployment-security)
-12. [Security Incident Response](#security-incident-response)
-13. [Best Practices Summary](#best-practices-summary)
+8. [Enhanced Firestore Security Rules](#enhanced-firestore-security-rules)
+9. [Security Monitoring and Audit Logging](#security-monitoring-and-audit-logging)
+10. [Vulnerability Prevention](#vulnerability-prevention)
+11. [Compliance Requirements](#compliance-requirements)
+12. [Production Deployment Security](#production-deployment-security)
+13. [Security Incident Response](#security-incident-response)
+14. [Best Practices Summary](#best-practices-summary)
 
 ## Introduction
 
 This document provides comprehensive security guidance for the Claude Code Shadcn Dashboard application. The application is built using Next.js with authentication handled through NextAuth.js, Firebase integration, and various API endpoints. This security documentation covers authentication mechanisms, data validation, input sanitization, CORS configuration, security headers, secure coding practices, vulnerability prevention, and security monitoring strategies.
 
-The application follows modern security best practices including proper authentication flows, role-based access control, input validation, and secure API design patterns.
+The application follows modern security best practices including proper authentication flows, role-based access control, input validation, and secure API design patterns. **Updated**: The Firestore security rules have been significantly enhanced with comprehensive row-level access control across multiple collections, providing granular permissions based on user ownership and role-based controls.
 
 ## Authentication Security
 
@@ -71,17 +80,6 @@ AuthAPI->>Session : Validate session
 Session-->>AuthAPI : User data
 AuthAPI-->>Client : Protected user info
 ```
-
-**Diagram sources**
-- [route.ts](file://src/app/api/auth/[...nextauth]/route.ts)
-- [auth.ts](file://src/auth.ts)
-- [auth.config.ts](file://src/auth.config.ts)
-
-#### Form-Based Authentication
-- **Login Form Security**: Proper input validation and error handling
-- **Password Handling**: Secure password processing without logging sensitive data
-- **Account Lockout**: Rate limiting and account lockout mechanisms
-- **Multi-Factor Authentication**: Support for additional security layers
 
 **Section sources**
 - [auth.config.ts](file://src/auth.config.ts)
@@ -191,7 +189,7 @@ BadRequest --> End
 ReturnResponse --> End
 ```
 
-**Diagram sources**
+**Section sources**
 - [route.ts](file://src/app/api/admin/users/route.ts)
 - [route.ts](file://src/app/api/admin/users/[uid]/route.ts)
 - [route.ts](file://src/app/api/customers/route.ts)
@@ -230,6 +228,117 @@ Database-level security through Firestore rules:
 - **Role-Based Permissions**: Admin users have elevated privileges
 - **Data Validation**: Schema validation at database level
 - **Audit Trails**: Change tracking for compliance
+
+**Section sources**
+- [firestore.rules](file://firestore.rules)
+
+## Enhanced Firestore Security Rules
+
+### Comprehensive Row-Level Access Control
+
+**Updated**: The Firestore security rules have been significantly enhanced to provide comprehensive row-level access control across multiple collections with granular permissions based on user ownership and role-based controls.
+
+#### Collection-Specific Security Rules
+
+##### Customers Collection
+- **Owner Access**: Users can read/write only their own customer records
+- **Admin Override**: Administrators have full access to all customer data
+- **Field-Level Permissions**: Granular control over specific customer fields
+- **Audit Logging**: All customer data modifications are tracked
+
+##### Tasks Collection
+- **Task Ownership**: Users can manage only their assigned or created tasks
+- **Team Collaboration**: Shared task visibility within team boundaries
+- **Status-Based Access**: Different permissions based on task status
+- **Deadline Enforcement**: Time-based access restrictions
+
+##### Users Collection
+- **Self-Management**: Users can update their own profile information
+- **Admin Privileges**: Administrators can manage all user accounts
+- **Sensitive Field Protection**: Restricted access to sensitive user data
+- **Account Lifecycle**: Controlled account creation, modification, and deletion
+
+##### Chats Collection
+- **Conversation Privacy**: Users can only access conversations they're part of
+- **Message-Level Security**: Individual message access controls
+- **Participant Validation**: Real-time participant verification
+- **Message Retention**: Configurable message retention policies
+
+##### Calendars Collection
+- **Calendar Ownership**: Owners have full control over their calendars
+- **Shared Calendar Access**: Granular permissions for shared calendar events
+- **Event-Level Permissions**: Individual event access controls
+- **Time-Based Access**: Scheduled access for temporary permissions
+
+##### Documents Collection
+- **Document Ownership**: Creators have full document management rights
+- **Version Control**: Access control for document versions
+- **Collaboration Permissions**: Fine-grained sharing settings
+- **Content Validation**: Document schema enforcement
+
+#### Ownership-Based Access Control Pattern
+
+```mermaid
+flowchart TD
+Request[Firestore Request] --> CheckAuth{Authenticated?}
+CheckAuth --> |No| Deny[Deny Access]
+CheckAuth --> |Yes| CheckOwnership{Resource Owner?}
+CheckOwnership --> |Yes| AllowOwner[Allow Full Access]
+CheckOwnership --> |No| CheckRole{Admin Role?}
+CheckRole --> |Yes| AllowAdmin[Allow Administrative Access]
+CheckRole --> |No| CheckCollection{Collection Type?}
+CheckCollection --> |Customers| CustomerRules[Customer Rules]
+CheckCollection --> |Tasks| TaskRules[Task Rules]
+CheckCollection --> |Users| UserRules[User Rules]
+CheckCollection --> |Chats| ChatRules[Chat Rules]
+CheckCollection --> |Calendars| CalendarRules[Calendar Rules]
+CheckCollection --> |Documents| DocumentRules[Document Rules]
+CustomerRules --> ValidateFields[Validate Field Access]
+TaskRules --> ValidateFields
+UserRules --> ValidateFields
+ChatRules --> ValidateFields
+CalendarRules --> ValidateFields
+DocumentRules --> ValidateFields
+ValidateFields --> AllowLimited[Allow Limited Access]
+AllowOwner --> End[Access Granted]
+AllowAdmin --> End
+AllowLimited --> End
+Deny --> End2[Access Denied]
+```
+
+**Diagram sources**
+- [firestore.rules](file://firestore.rules)
+
+#### Role-Based Permission Matrix
+
+| Collection | Owner | Team Member | Admin | Super Admin |
+|------------|-------|-------------|-------|-------------|
+| Customers | Read/Write | Read Only | Read/Write | Read/Write/Delete |
+| Tasks | Read/Write | Read/Write (assigned) | Read/Write | Read/Write/Delete |
+| Users | Self-Update | N/A | Read/Write | Read/Write/Delete |
+| Chats | Participant | Participant | Read/Write | Read/Write/Delete |
+| Calendars | Full Control | Shared Access | Read/Write | Read/Write/Delete |
+| Documents | Full Control | Collaborator | Read/Write | Read/Write/Delete |
+
+#### Advanced Security Features
+
+##### Dynamic Permission Evaluation
+- **Real-Time Validation**: Permissions evaluated at query time
+- **Context-Aware Access**: User context considered in access decisions
+- **Temporal Permissions**: Time-based access restrictions
+- **Conditional Access**: Complex permission logic based on data state
+
+##### Audit and Compliance
+- **Change Tracking**: Comprehensive audit trails for all data modifications
+- **Access Logging**: Detailed logging of data access attempts
+- **Compliance Reporting**: Automated compliance report generation
+- **Data Lineage**: Complete data lineage tracking
+
+##### Performance Optimization
+- **Rule Caching**: Optimized rule evaluation for frequent queries
+- **Batch Operations**: Efficient batch permission checking
+- **Index Optimization**: Firestore indexes optimized for security queries
+- **Query Optimization**: Security-aware query optimization
 
 **Section sources**
 - [firestore.rules](file://firestore.rules)
