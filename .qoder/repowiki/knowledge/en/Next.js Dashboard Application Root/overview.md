@@ -1,0 +1,1 @@
+Single Next.js 16 App Router project that wires shadcn/ui primitives, cross-cutting services, and feature modules into one Firestore-backed dashboard behind a shared HTML shell.

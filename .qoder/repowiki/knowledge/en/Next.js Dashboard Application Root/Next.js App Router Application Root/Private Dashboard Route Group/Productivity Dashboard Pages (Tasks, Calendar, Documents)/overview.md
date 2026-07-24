@@ -1,0 +1,1 @@
+Next.js App Router route pages that compose the Tasks, Calendar, and Documents productivity dashboards by wiring client-side state to shared feature modules' services, column factories, and data-table components.

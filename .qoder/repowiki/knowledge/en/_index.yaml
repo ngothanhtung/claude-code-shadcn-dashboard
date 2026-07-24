@@ -3,11 +3,11 @@ schema_version: 1
 locale: en-US
 branch: firebase-storage
 nodes_managed: true
-exported_at: "2026-07-23T20:07:56Z"
+exported_at: "2026-07-23T21:23:50Z"
 modules:
     "":
-        dir_name: Shadcn Dashboard Next.js Monorepo
-        title: Shadcn Dashboard Next.js Monorepo
+        dir_name: Next.js Dashboard Application Root
+        title: Next.js Dashboard Application Root
         scope:
             - CLAUDE.md
             - package.json
@@ -35,8 +35,8 @@ modules:
         depends_on: []
         related_to: []
     app_shell:
-        dir_name: Next.js App Router Application Shell
-        title: Next.js App Router Application Shell
+        dir_name: Next.js App Router Application Root
+        title: Next.js App Router Application Root
         scope:
             - src/app/
         source_files: []

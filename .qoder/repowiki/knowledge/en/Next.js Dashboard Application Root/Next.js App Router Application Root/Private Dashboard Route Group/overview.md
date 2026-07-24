@@ -1,0 +1,1 @@
+Next.js App Router `(private)` route group that wraps every authenticated dashboard feature behind a single client-side layout providing the sidebar, header, footer, and theme customizer chrome.

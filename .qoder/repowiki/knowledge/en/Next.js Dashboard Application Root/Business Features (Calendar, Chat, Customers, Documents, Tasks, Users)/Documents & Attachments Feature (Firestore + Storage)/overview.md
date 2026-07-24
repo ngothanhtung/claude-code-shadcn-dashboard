@@ -1,0 +1,1 @@
+Client-side CRUD for Firestore documents and their Firebase Storage attachments, exposed through a shadcn-based data table with multi-step add/upload dialogs.
