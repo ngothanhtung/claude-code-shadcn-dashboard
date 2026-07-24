@@ -15,6 +15,7 @@ import {
   FileText,
   Contact,
   Mail,
+  Send,
 } from "lucide-react"
 import Link from "next/link"
 import { Logo } from "@/components/logo"
@@ -81,6 +82,11 @@ const data = {
           title: "Resend",
           url: "/resend",
           icon: Mail,
+        },
+        {
+          title: "Telegram",
+          url: "/telegram",
+          icon: Send,
         },
       ],
     },
