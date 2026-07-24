@@ -1,0 +1,5 @@
+- Data sources are decoupled behind a `*-services.ts` function so components never import JSON or Firebase directly.
+- JSON fixtures live under `services/data/*.json` and are re-exported through a `*-mock-data.ts` barrel before being consumed by the service layer.
+- Per-module type contracts are declared as a `zod` schema object exported alongside a `z.infer<typeof schema>` alias (see `dashboard-types.ts`).
+- Service functions return plain objects whose shape mirrors the collection names used by `getFirestoreCollection` (e.g. `pastPerformanceData`, `keyPersonnelData`).
+- Comments in `settings-services.ts` and `settings-mock-data.ts` explicitly document that settings data lives under `users/{uid}` in Firestore rather than here.

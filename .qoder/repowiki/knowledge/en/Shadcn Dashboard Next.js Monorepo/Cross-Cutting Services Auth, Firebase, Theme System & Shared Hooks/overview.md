@@ -1,0 +1,1 @@
+Shared runtime services providing NextAuth-based authorization, Firebase client/admin SDK wrappers, shadcn theme customization with CSS variable injection, and reusable React hooks/contexts consumed across the application.

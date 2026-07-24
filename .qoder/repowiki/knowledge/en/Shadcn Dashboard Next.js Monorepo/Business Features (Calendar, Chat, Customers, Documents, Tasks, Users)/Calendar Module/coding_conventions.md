@@ -1,0 +1,6 @@
+- Client components opt in via the `"use client"` directive at the top of every React component file.
+- Shared domain types (`CalendarEvent`, `Calendar`) live in `services/types/calendar-types.ts` and are imported via absolute paths from `@/modules/calendar/services/types/calendar-types`.
+- Mock data is stored as plain JSON under `services/data/*.json` and converted to typed objects in `calendar-mock-data.ts`, with dates normalized to the current year/month while preserving original day/time.
+- Firestore integration is abstracted through `getFirestoreCollection` / `getFirestoreDocumentCollection` calls that accept a fallback default array, allowing the same service function to work with both real Firestore and mock data.
+- All date normalization goes through a single `normalizeDate` helper that accepts multiple Firestore-compatible representations (Date, string, `{toDate}`, `{seconds,nanoseconds}`).
+- UI styling uses Tailwind classes combined with the shared `cn` utility from `@/lib/utils` for conditional class composition.

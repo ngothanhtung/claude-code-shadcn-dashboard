@@ -1,0 +1,1 @@
+Next.js App Router client components, shadcn/ui (Radix primitives), lucide-react icons, cmdk for the command palette, next-auth SessionProvider, and Tailwind CSS utility classes including arbitrary values for radial-gradient dot patterns.

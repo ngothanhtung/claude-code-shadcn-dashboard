@@ -1,0 +1,6 @@
+Three sibling Route Group pages, each a thin composition layer over feature-scoped component/service packages:
+- `chat/page.tsx` is a client page (`"use client"`) that fetches chat state via `@/modules/chat/services/chat-services.getChatData` on mount and renders the `@/modules/chat/components/chat.Chat` presentational component.
+- `dashboard/page.tsx` is a server page that calls `@/modules/dashboard-1/services/dashboard-services.getDashboardData` at render time and passes the resulting data to `SectionCards`, `ChartAreaInteractive`, and `DataTable` from `@/modules/dashboard-1/components`.
+- `dashboard-2/page.tsx` is a client page that composes a richer business-dashboard layout from multiple `@/modules/dashboard-2/components/*` subcomponents (`MetricsOverview`, `SalesChart`, `RecentTransactions`, `TopProducts`, `CustomerInsights`, `QuickActions`, `RevenueBreakdown`).
+
+Dependency direction is strictly inward: these pages depend only on `@/modules/*` packages and never import each other. The `(private)` Next.js route group provides the shared authentication/layout wrapper for all three routes.

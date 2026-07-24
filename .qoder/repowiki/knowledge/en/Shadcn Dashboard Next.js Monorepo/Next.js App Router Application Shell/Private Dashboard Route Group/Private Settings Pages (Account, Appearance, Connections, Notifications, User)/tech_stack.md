@@ -1,0 +1,1 @@
+React Server Components + Next.js App Router (`"use client"` pages), React Hook Form with Zod validation via `@hookform/resolvers/zod`, Firebase Auth client (`auth`, `onAuthStateChanged`) for live user state, and Sonner for toast notifications.

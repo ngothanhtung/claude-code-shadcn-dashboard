@@ -1,0 +1,3 @@
+- Each route is a single default-exported function in `page.tsx` whose sole responsibility is composing feature components — no business logic lives in the page itself.
+- Server-rendered pages are declared as `async function Page()` and await service functions directly inside the component body; client-only pages use `"use client"` with `useState`/`useEffect` for data fetching.
+- Feature imports are namespaced through the `@/modules/<feature>/...` alias rather than relative paths, keeping pages decoupled from internal package structure.

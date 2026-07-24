@@ -1,0 +1,1 @@
+React Server Components with `"use client"` directives, `@tanstack/react-table` for in-memory table state (sorting, faceted filters, pagination), Firebase Firestore client SDK for persistence, and Zod for runtime validation of the `Task` model.

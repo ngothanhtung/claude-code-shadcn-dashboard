@@ -1,0 +1,1 @@
+Client-side chat feature providing a conversation list, message thread, and input UI backed by a Zustand store and Firestore-backed mock data.

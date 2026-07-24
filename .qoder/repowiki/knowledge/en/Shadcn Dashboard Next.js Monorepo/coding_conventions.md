@@ -1,0 +1,3 @@
+- All imports use the `@/*` path alias defined in `tsconfig.json` rather than relative paths, keeping deep feature imports consistent across children.
+- Feature modules follow a component-first layout: each feature owns its own React components plus a thin services layer that resolves data from Firestore or bundled JSON fixtures.
+- shadcn/ui components are generated against the single `components.json` config (New York style, CSS variables, lucide icons) so every child consumes identical primitive APIs.

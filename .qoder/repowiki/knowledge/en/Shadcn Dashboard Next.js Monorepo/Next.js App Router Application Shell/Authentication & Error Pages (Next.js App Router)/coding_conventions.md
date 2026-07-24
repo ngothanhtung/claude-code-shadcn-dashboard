@@ -1,0 +1,4 @@
+- Each route folder pairs a thin `page.tsx` default export with a co-located `components/<name>.tsx` client component that owns all form/state logic.
+- Client forms declare a top-of-file `"use client"` directive and use a local zod schema plus `z.infer<typeof schema>` typed values for `useForm`.
+- Firebase errors are normalized through `getFirebaseAuthErrorMessage` before being surfaced to the UI (via `form.setError('root', ...)` or `toast.promise` error callback).
+- After obtaining a Firebase ID token, authentication is completed by calling `signIn('credentials', { idToken, redirect: false })` followed by an explicit `router.push('/dashboard')` and `router.refresh()`.

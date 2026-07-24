@@ -1,0 +1,6 @@
+- Server-side admin access is checked through a single `hasAdminAccess(user)` predicate that accepts three signals (`isAdmin` flag, `ADMIN_EMAIL` match, `ADMIN_ROLE_ID` in roles), keeping privilege logic centralized in `permissions.ts`.
+- Firebase client initialization is guarded by an explicit `validateFirebaseEnv()` that throws if any `NEXT_PUBLIC_FIREBASE_*` entry is missing, so misconfiguration fails fast at import time rather than silently.
+- Firestore reads in `firestore-query.ts` wrap every call in try/catch and return a provided `fallbackData` array when the network or DB is unavailable, giving features a graceful offline/local fallback.
+- User-facing error messages are mapped from Firebase `FirebaseError.code` values into Vietnamese strings inside `getFirebaseAuthErrorMessage`, centralizing localization instead of scattering i18n calls.
+- Theme presets are expressed as plain objects with parallel `light`/`dark` style maps keyed by CSS variable names, and applied by iterating `Object.entries(styles)` and calling `root.style.setProperty('--' + key, value)`.
+- React hooks are marked `'use client'` at the top of the file and keep all DOM mutations (CSS variable writes, media queries) behind `typeof window !== 'undefined'` guards.

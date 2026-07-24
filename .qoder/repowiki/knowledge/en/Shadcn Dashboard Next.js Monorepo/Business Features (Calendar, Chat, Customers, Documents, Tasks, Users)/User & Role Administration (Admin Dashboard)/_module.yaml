@@ -1,0 +1,8 @@
+schema_version: 1
+module_path: business_features/users
+title: User & Role Administration (Admin Dashboard)
+scope:
+    - src/modules/users/
+source_files: []
+depends_on: []
+related_to: []

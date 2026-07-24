@@ -1,0 +1,1 @@
+Next.js App Router routes for sign-in, sign-up, forgot-password, and a set of user-facing error pages, all sharing a minimal authenticated-shell layout.

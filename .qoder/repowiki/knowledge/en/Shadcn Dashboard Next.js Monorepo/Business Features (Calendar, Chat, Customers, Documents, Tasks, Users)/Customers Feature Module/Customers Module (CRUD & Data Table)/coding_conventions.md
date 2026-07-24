@@ -1,0 +1,4 @@
+- Every service function obtains ownership via `await getCurrentUserId()` and injects `userId` into the written record, so each customer is scoped to its creator.
+- Firestore reads return `JSON.parse(JSON.stringify(result))` to strip any internal document metadata before handing data back to React.
+- The `Customer` domain model is declared once as a Zod object (`customerSchema`) and exported as a TypeScript type via `z.infer<typeof customerSchema>`, rather than hand-written interfaces.
+- UI features are split into small single-purpose components (`data-table-*`) composed by a central `DataTable` orchestrator, keeping column definitions, toolbar actions, and pagination separate.

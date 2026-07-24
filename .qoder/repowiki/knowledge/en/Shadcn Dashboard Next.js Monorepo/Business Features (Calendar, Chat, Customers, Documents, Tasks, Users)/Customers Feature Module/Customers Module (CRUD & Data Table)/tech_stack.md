@@ -1,0 +1,1 @@
+React Server Components with `"use client"` for table components; `@tanstack/react-table` for in-memory sorting/filtering/pagination; shadcn/ui `Table` primitives for cells/headers; Firebase Auth + Firestore for persistence; Zod schemas for runtime validation of the `Customer` record.

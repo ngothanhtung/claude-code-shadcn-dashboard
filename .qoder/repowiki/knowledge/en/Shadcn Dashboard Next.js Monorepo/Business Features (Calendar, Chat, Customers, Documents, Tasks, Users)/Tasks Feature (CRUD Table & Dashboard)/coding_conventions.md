@@ -1,0 +1,4 @@
+- All shared domain types are defined once in `services/types/*.ts` via a Zod schema and re-exported as `z.infer<...>` TypeScript types; components and services import the inferred type rather than duplicating field shapes.
+- Column rendering is driven by a `getTaskColumns({ onUpdateTask, onDeleteTask, onDuplicateTask })` factory returning `ColumnDef<Task>[]`, keeping column config declarative while passing mutation handlers as optional props.
+- Firestore mutations are exposed as plain async functions in `services/task-services.ts` that return the persisted entity or void, leaving all loading/error/optimistic-update state to the calling component.
+- Each client component file starts with the `"use client"` directive at the top, marking it as a React Client Component explicitly rather than relying on convention.

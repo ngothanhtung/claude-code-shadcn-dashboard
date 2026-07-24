@@ -1,0 +1,10 @@
+schema_version: 1
+module_path: app_shell/private_dashboard/productivity_features
+title: Productivity Dashboard Pages (Tasks, Calendar, Documents)
+scope:
+    - src/app/(private)/tasks/
+    - src/app/(private)/calendar/
+    - src/app/(private)/documents/
+source_files: []
+depends_on: []
+related_to: []

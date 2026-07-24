@@ -1,0 +1,1 @@
+Client-side task management feature providing a searchable, filterable, paginated data table backed by Firebase Firestore with mock seeding and statistics helpers.

@@ -1,0 +1,2 @@
+- Route groups use parentheses around their folder name (`(auth)`, `(private)`) to opt into shared layouts without affecting URL paths.
+- Each route page co-locates its page component under a sibling `components/` folder rather than importing from a shared UI library.

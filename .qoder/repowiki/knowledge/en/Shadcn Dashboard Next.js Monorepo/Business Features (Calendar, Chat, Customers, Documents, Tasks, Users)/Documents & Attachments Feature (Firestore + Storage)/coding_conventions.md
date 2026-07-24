@@ -1,0 +1,4 @@
+- All runtime shapes are declared once in `services/types/document-types.ts` as Zod schemas (`documentSchema`, `documentFormSchema`, `documentAttachmentSchema`) and re-exported as TypeScript types via `z.infer`, then consumed by both services and components.
+- Firestore mutations use soft delete: `deleteDocument` sets `deletedAt` via `serverTimestamp()` rather than removing the doc, and readers filter out `deletedAt != null` entries.
+- File uploads are batched with a fixed concurrency window (`CONCURRENCY = 3`) using `Promise.allSettled` over slices of the file list, so failures in one file do not abort the whole batch.
+- Component state that triggers side effects is passed down as async callbacks (`onAddDocument`, `onSeedDocuments`) rather than calling services directly, keeping components pure and swappable between mock and real backends.

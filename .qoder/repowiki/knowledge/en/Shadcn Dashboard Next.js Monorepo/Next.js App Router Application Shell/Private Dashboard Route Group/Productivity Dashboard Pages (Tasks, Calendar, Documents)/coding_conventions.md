@@ -1,0 +1,5 @@
+- Client-side pages follow a uniform shape: refreshXxx callback plus useEffect on mount to call it, then handler callbacks that invoke a service mutation and immediately update local state before re-fetching.
+- CRUD handlers are wrapped in useCallback with explicit dependency arrays listing the refresh callback and any derived handlers, so the memoized column factories can reference them safely.
+- Column configuration is produced by a getXxxColumns({ onUpdateXxx, onDeleteXxx, ... }) factory imported from @/modules/<feature>/components/columns, keeping table cell rendering out of the page.
+- Stats cards are computed locally via a getXxxStats(list) helper from the feature's services module and rendered as a grid of shadcn Card elements with percentage badges.
+- Seed actions expose a dedicated seedXxxWithClient() service plus a page-level isSeedingXxx loading flag toggled around the call, distinct from the main list-loading state.

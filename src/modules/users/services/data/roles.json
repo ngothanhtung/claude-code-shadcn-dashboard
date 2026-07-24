@@ -28,6 +28,13 @@
     "updatedAt": "2024-01-01T00:00:00Z"
   },
   {
+    "id": "role-document-manager",
+    "name": "Document Manager",
+    "description": "Quản lý tài liệu - Có thể tạo, chỉnh sửa và xóa tài liệu",
+    "createdAt": "2024-01-01T00:00:00Z",
+    "updatedAt": "2024-01-01T00:00:00Z"
+  },
+  {
     "id": "role-subscriber",
     "name": "Subscriber",
     "description": "Người đăng ký - Quyền xem cơ bản",

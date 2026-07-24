@@ -1,0 +1,5 @@
+- Each `ui/` file exports one or more named React components (and optionally a `*Variants` cva object) without a barrel index, consumed via direct relative imports like `@/components/ui/button`.
+- Variant styling is declared through `cva(...)` with a `variants` map keyed by prop names (e.g. `variant`, `size`, `orientation`) and merged into `className` via `cn(buttonVariants({ variant, size, className }))`.
+- Components are marked with stable `data-slot="..."` attributes (and `data-variant`/`data-size`/`data-orientation`) so higher-level components can target them with CSS attribute selectors instead of relying on class names.
+- Client-only components opt in with the `'use client'` directive at the top of the file; server components avoid it.
+- Class merging always goes through the shared `cn` utility from `@/lib/utils` rather than string concatenation.

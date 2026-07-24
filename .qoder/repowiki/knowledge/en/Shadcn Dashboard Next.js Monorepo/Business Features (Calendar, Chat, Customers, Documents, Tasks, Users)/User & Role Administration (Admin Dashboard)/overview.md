@@ -1,0 +1,1 @@
+Client-side admin feature for managing users and roles, backed by Firebase Auth/Firestore with mock data fallbacks.

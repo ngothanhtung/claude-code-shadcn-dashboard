@@ -1,0 +1,5 @@
+The `src/app/` directory is the Next.js App Router root. Three top-level concerns are split by path:
+- `(auth)/` — unauthenticated routes (sign-in, sign-up, forgot-password) plus user-facing error pages (`not-found`, `forbidden`, `unauthorized`, `internal-server-error`, `under-maintenance`), each with its own layout.
+- `(private)/` — authenticated route group whose shared `layout.tsx` wraps every dashboard page behind authentication.
+- `api/` — Next.js Route Handlers exposing REST endpoints for admin users, customers, tasks, the NextAuth `[...nextauth]` session proxy, and a Telegram webhook.
+Cross-cutting wiring lives at this level: `layout.tsx` provides the global HTML `<html>`/`<body>` shell, `globals.css` applies Tailwind/theme styles, `loading.tsx` defines the global loading UI, and `not-found.tsx` is the root 404 fallback. The private group and auth group share the same theme/layout primitives but differ in whether they require an active session.

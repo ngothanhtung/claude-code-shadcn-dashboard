@@ -1,0 +1,1 @@
+Firebase SDK v9 modular client (`firebase/firestore`, `firebase/storage`) for persistence; Zod schemas enforce both server payload shape and client form input; `@tanstack/react-table` drives sorting/filtering/pagination/facets; UI primitives from `@/components/ui/*` (shadcn).

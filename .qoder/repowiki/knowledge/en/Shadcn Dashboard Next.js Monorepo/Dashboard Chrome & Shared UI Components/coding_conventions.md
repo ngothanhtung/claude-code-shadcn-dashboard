@@ -1,0 +1,6 @@
+- Every interactive component starts with the `"use client"` directive so it can call NextAuth, Next router, and browser APIs.
+- Navigation items are declared as plain data arrays (title/url/icon/items) inside the owning component and rendered generically by `NavMain`/`NavSecondary`, keeping routes declarative rather than hard-coded in JSX.
+- User-facing text and URLs are kept in local data structures (e.g. `data.navGroups` in `app-sidebar.tsx`, `searchItems` in `command-search.tsx`) instead of being duplicated across sidebar and search.
+- Heavy or SSR-incompatible components are imported lazily through `dynamic-imports.ts` using `next/dynamic` with `ssr: false` and a minimal pulse skeleton as the loading fallback.
+- Styling uses Tailwind class names composed via the shared `cn()` helper from `@/lib/utils`, never inline style objects except for dynamic CSS variable updates.
+- Props are typed with explicit interfaces (e.g. `PricingPlan`, `SearchItem`, `ModeToggleProps`) rather than relying on implicit `any` shapes.

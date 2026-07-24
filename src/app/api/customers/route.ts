@@ -84,6 +84,9 @@ export async function POST(request: NextRequest) {
       email,
       phoneNumber,
       serviceName,
+      status: "new",
+      priority: "medium",
+      userId: "",
       createdAt: serverTimestamp(),
     })
 

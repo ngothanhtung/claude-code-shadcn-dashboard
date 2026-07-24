@@ -12,6 +12,8 @@ import {
   Shield,
   AlertTriangle,
   Users,
+  FileText,
+  Contact,
 } from "lucide-react"
 import Link from "next/link"
 import { Logo } from "@/components/logo"
@@ -55,6 +57,11 @@ const data = {
           icon: CheckSquare,
         },
         {
+          title: "Customers",
+          url: "/customers",
+          icon: Contact,
+        },
+        {
           title: "Chat",
           url: "/chat",
           icon: MessageCircle,
@@ -63,6 +70,11 @@ const data = {
           title: "Calendar",
           url: "/calendar",
           icon: Calendar,
+        },
+        {
+          title: "Documents",
+          url: "/documents",
+          icon: FileText,
         },
       ],
     },

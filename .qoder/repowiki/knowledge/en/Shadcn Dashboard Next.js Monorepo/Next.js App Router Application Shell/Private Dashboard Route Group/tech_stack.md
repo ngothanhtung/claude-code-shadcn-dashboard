@@ -1,0 +1,1 @@
+Next.js App Router route groups with a client-side React layout (`"use client"`) wrapping shadcn UI primitives from `@/components/ui/sidebar` and Tailwind CSS for styling.

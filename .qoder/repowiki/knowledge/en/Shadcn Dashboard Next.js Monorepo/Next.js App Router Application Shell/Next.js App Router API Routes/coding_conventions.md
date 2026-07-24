@@ -1,0 +1,6 @@
+- Every route that touches external services wraps its body in try/catch and returns a uniform `{ success, message, data?, errors? }` JSON envelope with appropriate HTTP status codes.
+- Request bodies are validated with a Zod schema via `.safeParse(body)` and rejected with a 400 response carrying `parsed.error.flatten().fieldErrors` when invalid.
+- Protected admin routes call `getAdminApiErrorResponse(CORS_HEADERS)` at the top of each handler and short-circuit if it returns an error response.
+- CORS is handled by a local `CORS_HEADERS` constant plus an explicit `OPTIONS` handler returning 204, rather than relying on framework defaults.
+- Route params are typed destructured from the second argument's `params` object declared as `Promise<{ uid: string }>`, awaited before use.
+- User-facing messages and error strings are written in Vietnamese, kept alongside the code rather than extracted to i18n files.
