@@ -27,11 +27,7 @@ import {
 
 import { UserDataTableToolbar } from "./user-data-table-toolbar"
 import { UserDataTablePagination } from "./user-data-table-pagination"
-import type {
-  Role,
-  User,
-  UserRole,
-} from "../services/types/user-types"
+import type { Role, User, UserRole } from "../services/types/user-types"
 
 interface UserDataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
@@ -50,7 +46,9 @@ export function UserDataTable<TData, TValue>({
 }: UserDataTableProps<TData, TValue>) {
   const [rowSelection, setRowSelection] = React.useState({})
   const [columnVisibility, setColumnVisibility] =
-    React.useState<VisibilityState>({})
+    // `gender` is a filter-only column (gender shows under the name cell),
+    // so it starts hidden but stays available to the toolbar filter.
+    React.useState<VisibilityState>({ gender: false })
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
   )
@@ -81,10 +79,7 @@ export function UserDataTable<TData, TValue>({
 
   return (
     <div className="space-y-4">
-      <UserDataTableToolbar
-        table={table}
-        onAddUser={onAddUser}
-      />
+      <UserDataTableToolbar table={table} onAddUser={onAddUser} />
       <div className="rounded-md border">
         <Table>
           <TableHeader>
@@ -114,7 +109,10 @@ export function UserDataTable<TData, TValue>({
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
                     </TableCell>
                   ))}
                 </TableRow>

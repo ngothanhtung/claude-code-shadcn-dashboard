@@ -120,6 +120,20 @@ export function getUserColumns({
       },
     },
     {
+      accessorKey: "gender",
+      header: "Giới tính",
+      // Filter-only column: hidden by default (see UserDataTable) because
+      // gender is shown as a sub-label in the name column. Exact match is
+      // required — "male" is a substring of "female", so the default
+      // includesString filter would mis-match.
+      filterFn: "equalsString",
+      cell: ({ row }) => (
+        <span className="text-sm">
+          {getGenderLabel(row.getValue("gender") as string)}
+        </span>
+      ),
+    },
+    {
       accessorKey: "email",
       header: "Email",
       cell: ({ row }) => {
@@ -139,9 +153,7 @@ export function getUserColumns({
         const providers = row.original.providers ?? []
 
         if (providers.length === 0) {
-          return (
-            <span className="text-xs text-muted-foreground italic">—</span>
-          )
+          return <span className="text-xs text-muted-foreground italic">—</span>
         }
 
         return (
