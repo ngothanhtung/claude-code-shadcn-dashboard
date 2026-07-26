@@ -61,7 +61,7 @@ export function UserDataTableToolbar<TData>({
           value={statusFilter?.[0] ?? "all"}
           onValueChange={handleStatusChange}
         >
-          <SelectTrigger className="w-[170px] cursor-pointer">
+          <SelectTrigger className="w-42.5 cursor-pointer">
             <SelectValue placeholder="Trạng thái" />
           </SelectTrigger>
           <SelectContent>
@@ -85,7 +85,7 @@ export function UserDataTableToolbar<TData>({
           value={genderFilter ?? "all"}
           onValueChange={handleGenderChange}
         >
-          <SelectTrigger className="w-[160px] cursor-pointer">
+          <SelectTrigger className="w-40 cursor-pointer">
             <SelectValue placeholder="Giới tính" />
           </SelectTrigger>
           <SelectContent>
@@ -110,7 +110,7 @@ export function UserDataTableToolbar<TData>({
           onChange={(event) =>
             table.getColumn("name")?.setFilterValue(event.target.value)
           }
-          className="w-[200px] lg:w-[300px]"
+          className="w-50 lg:w-75"
         />
         <Button
           variant="outline"

@@ -25,7 +25,10 @@ export async function POST(request: NextRequest) {
 
   if (!botToken) {
     return NextResponse.json(
-      { success: false, message: "Thiếu cấu hình TELEGRAM_BOT_TOKEN trên server" },
+      {
+        success: false,
+        message: "Thiếu cấu hình TELEGRAM_BOT_TOKEN trên server",
+      },
       { status: 500, headers: CORS_HEADERS }
     )
   }
@@ -43,20 +46,26 @@ export async function POST(request: NextRequest) {
   const parsed = SendTelegramSchema.safeParse(body)
   if (!parsed.success) {
     return NextResponse.json(
-      { success: false, message: "Dữ liệu không hợp lệ", errors: parsed.error.flatten().fieldErrors },
+      {
+        success: false,
+        message: "Dữ liệu không hợp lệ",
+        errors: parsed.error.flatten().fieldErrors,
+      },
       { status: 400, headers: CORS_HEADERS }
     )
   }
 
   const { message, parseMode } = parsed.data
-  const chatId = parsed.data.chatId ?? process.env.TELEGRAM_CHAT_ID
+  const chatId = parsed.data.chatId
 
   if (!chatId) {
     return NextResponse.json(
       {
         success: false,
         message: "Dữ liệu không hợp lệ",
-        errors: { chatId: ["Cần cung cấp chatId hoặc cấu hình TELEGRAM_CHAT_ID"] },
+        errors: {
+          chatId: ["Cần cung cấp chatId"],
+        },
       },
       { status: 400, headers: CORS_HEADERS }
     )

@@ -83,7 +83,7 @@ export function getUserColumns({
           }
           onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
           aria-label="Select all"
-          className="translate-y-[2px] cursor-pointer"
+          className="translate-y-0.5 cursor-pointer"
         />
       ),
       cell: ({ row }) => (
@@ -91,7 +91,7 @@ export function getUserColumns({
           checked={row.getIsSelected()}
           onCheckedChange={(value) => row.toggleSelected(!!value)}
           aria-label="Select row"
-          className="translate-y-[2px] cursor-pointer"
+          className="translate-y-0.5 cursor-pointer"
         />
       ),
       enableSorting: false,
@@ -141,7 +141,7 @@ export function getUserColumns({
         return (
           <div className="flex items-center gap-2 text-sm">
             <Mail className="size-3.5 text-muted-foreground" />
-            <span className="truncate max-w-[220px]">{email}</span>
+            <span className="truncate max-w-55">{email}</span>
           </div>
         )
       },
