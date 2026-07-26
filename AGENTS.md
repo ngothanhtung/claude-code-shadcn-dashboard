@@ -8,12 +8,12 @@ Next.js 16 (App Router, Turbopack) admin dashboard template: TypeScript 5.9, Tai
 
 ## Commands
 
-| Command              | Purpose                                        |
-| -------------------- | ---------------------------------------------- |
-| `npm run dev`        | Dev server (Next.js + Turbopack)               |
-| `npm run build`      | Production build                               |
-| `npm run lint`       | ESLint (`next/core-web-vitals` + `next/typescript`) |
-| `npx tsc --noEmit`   | Type-check the whole project                   |
+| Command            | Purpose                                             |
+| ------------------ | --------------------------------------------------- |
+| `npm run dev`      | Dev server (Next.js + Turbopack)                    |
+| `npm run build`    | Production build                                    |
+| `npm run lint`     | ESLint (`next/core-web-vitals` + `next/typescript`) |
+| `npx tsc --noEmit` | Type-check the whole project                        |
 
 **There is no test framework** (no Jest/Vitest). Verify changes with `npx tsc --noEmit` and `npm run build`. There is no single-test command.
 
@@ -31,7 +31,7 @@ Next.js 16 (App Router, Turbopack) admin dashboard template: TypeScript 5.9, Tai
 The auth chain spans five files — understand it before touching any of them:
 
 1. **Firebase client Auth** (`src/lib/firebase/auth.ts`, `client.ts`) handles sign-in/sign-up in the browser and produces a Firebase ID token.
-2. **NextAuth CredentialsProvider** (`src/auth.ts`) verifies that token server-side via the Firebase REST endpoint `identitytoolkit.googleapis.com/v1/accounts:lookup` (deliberately *not* firebase-admin, so login works without Admin SDK creds).
+2. **NextAuth CredentialsProvider** (`src/auth.ts`) verifies that token server-side via the Firebase REST endpoint `identitytoolkit.googleapis.com/v1/accounts:lookup` (deliberately _not_ firebase-admin, so login works without Admin SDK creds).
 3. **Role loading** (`src/lib/auth/user-access.ts`): `getUserAuthorization()` reads the `users` profile doc + `users_roles` assignments via the **Admin SDK** and returns `{ roles, isAdmin }`. The jwt callback re-fetches roles on every token refresh, so role changes propagate without re-login. `session.user` is augmented with `id`, `roles: string[]`, `isAdmin` (see `src/types/next-auth.d.ts`).
 4. **Route protection** (`src/proxy.ts`): Next.js 16's `proxy` (this repo does **not** use `middleware.ts`). `/api/*` routes are skipped (they self-protect); auth pages redirect logged-in users to `/dashboard`; everything else requires a session; `/admin/*` additionally requires `hasAdminAccess`.
 5. **Permission helpers** (`src/lib/auth/permissions.ts`): `hasAdminAccess()` (admin role `role-admin`, `isAdmin` flag, or hardcoded `ADMIN_EMAIL = admin@claudecode.ai`) and `hasDocumentManagerAccess()` (`role-document-manager`, admins implicit).
